@@ -1,0 +1,36 @@
+TechMart deployed to namespace: {{ .Release.Namespace }}
+
+  Access the store:
+    http://localhost       (kind — via NGINX ingress on port 80)
+{{- if .Values.frontend.ingress.host }}
+    https://{{ .Values.frontend.ingress.host }}
+{{- end }}
+
+  Check pod status:
+    kubectl get pods -n {{ .Release.Namespace }}
+
+  Grafana dashboards — import from infrastructure/grafana/dashboards/:
+    slo-overview.json   — all CUJs at a glance
+    checkout-slo.json   — checkout deep-dive with error budget
+
+{{- if .Values.api.otel.injectNodejs }}
+
+  OTel auto-instrumentation is ENABLED on the API.
+  Requires the Instrumentation CR and Collector to be running:
+    ./infrastructure/scripts/setup-telemetry.sh
+
+  Vendor credentials (create once per cluster if not already done):
+    kubectl create secret generic otel-vendor-credentials \
+      -n observability \
+      --from-literal=GRAFANA_INSTANCE_ID=<your-stack-id> \
+      --from-literal=GRAFANA_API_KEY=<glc_...token>
+{{- end }}
+
+{{- if .Values.traffic.enabled }}
+
+  Traffic generator running at {{ .Values.traffic.rps }} req/s.
+  To change rate:
+    helm upgrade techmart ./infrastructure/helm/techmart \
+      --namespace {{ .Release.Namespace }} --reuse-values \
+      --set traffic.rps=10
+{{- end }}

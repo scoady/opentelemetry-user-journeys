@@ -1,0 +1,13 @@
+{{- if .Values.traffic.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k6-script
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "techmart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: traffic
+data:
+  test.js: |
+    {{- .Files.Get "files/k6-test.js" | nindent 4 }}
+{{- end }}

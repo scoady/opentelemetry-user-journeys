@@ -1,0 +1,53 @@
+{{- if .Values.traffic.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k6-traffic
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "techmart.labels" . | nindent 4 }}
+    app: k6-traffic
+    app.kubernetes.io/component: traffic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k6-traffic
+  template:
+    metadata:
+      labels:
+        app: k6-traffic
+        app.kubernetes.io/component: traffic
+    spec:
+      # Do not inject OTel auto-instrumentation — k6 is not a Node.js app.
+      containers:
+        - name: k6
+          image: grafana/k6:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              while true; do
+                echo "[k6] Starting run: ${RPS} req/s"
+                k6 run \
+                  --env RPS=${RPS} \
+                  --env TARGET_URL=${TARGET_URL} \
+                  /scripts/test.js
+                echo "[k6] Run complete — restarting in 5s"
+                sleep 5
+              done
+          env:
+            - name: RPS
+              value: {{ .Values.traffic.rps | quote }}
+            - name: TARGET_URL
+              value: {{ .Values.traffic.targetUrl | quote }}
+          volumeMounts:
+            - name: k6-script
+              mountPath: /scripts
+          resources:
+            {{- toYaml .Values.traffic.resources | nindent 12 }}
+      volumes:
+        - name: k6-script
+          configMap:
+            name: k6-script
+{{- end }}
