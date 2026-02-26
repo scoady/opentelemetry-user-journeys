@@ -1,22 +1,46 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+
+async function fetchProducts() {
+  const res = await fetch('/api/products');
+  if (!res.ok) {
+    throw new Error(`Server returned ${res.status} ${res.statusText}`);
+  }
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    // Ingress or nginx returned HTML instead of JSON — usually a startup race.
+    // Throw a message the user can act on rather than a cryptic parse error.
+    throw new Error('API not ready yet — please retry in a moment.');
+  }
+  return res.json();
+}
 
 export default function ProductGrid({ onAddToCart }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetch('/api/products')
-      .then(r => {
-        if (!r.ok) throw new Error('Failed to load products');
-        return r.json();
-      })
+  const load = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    fetchProducts()
       .then(data => { setProducts(data); setLoading(false); })
       .catch(err => { setError(err.message); setLoading(false); });
   }, []);
 
+  useEffect(() => { load(); }, [load]);
+
   if (loading) return <div className="loading">Loading products…</div>;
-  if (error) return <div className="page-error">⚠️ {error}</div>;
+
+  if (error) {
+    return (
+      <div className="page-error">
+        <p>⚠️ {error}</p>
+        <button className="add-btn" style={{ marginTop: '1rem' }} onClick={load}>
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div>
