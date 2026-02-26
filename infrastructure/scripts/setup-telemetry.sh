@@ -1,44 +1,43 @@
 #!/usr/bin/env bash
-# setup-telemetry.sh — Install cert-manager, the OpenTelemetry Operator,
-#                      and deploy the OTel Collector.
+# setup-telemetry.sh — Deploy cert-manager and the OpenTelemetry Operator via Helm,
+#                      then apply the OTel Collector CR from k8s manifests.
 #
-# Before running, fill in your vendor credentials:
-#   infrastructure/k8s/telemetry/collector/secret.yaml
+# Before running, populate your vendor credentials:
+#   kubectl create secret generic otel-vendor-credentials \
+#     -n observability \
+#     --from-literal=GRAFANA_AUTH=<base64(instanceId:apiKey)>
 #
 # Run once after setup-cluster.sh. Safe to re-run — all steps are idempotent.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+HELM_DIR="${ROOT_DIR}/infrastructure/helm"
 K8S_TELEMETRY="${ROOT_DIR}/infrastructure/k8s/telemetry"
 
-CERT_MANAGER_VERSION="v1.19.4"
-OTEL_OPERATOR_VERSION="v0.145.0"
+CERT_MANAGER_CHART_VERSION="v1.19.4"
+OTEL_OPERATOR_CHART_VERSION="0.106.0"
 
-# ── 1. cert-manager (required by the OTel operator's webhooks) ────────────────
-echo ">>> Installing cert-manager ${CERT_MANAGER_VERSION}…"
-kubectl apply -f \
-  "https://github.com/cert-manager/cert-manager/releases/download/${CERT_MANAGER_VERSION}/cert-manager.yaml"
-
-echo "  Waiting for cert-manager to be ready…"
-kubectl wait --for=condition=ready pod \
-  -l app.kubernetes.io/component=webhook \
-  -n cert-manager \
-  --timeout=120s
+# ── 1. cert-manager ───────────────────────────────────────────────────────────
+echo ">>> Installing cert-manager ${CERT_MANAGER_CHART_VERSION} via Helm…"
+helm upgrade --install cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --version "${CERT_MANAGER_CHART_VERSION}" \
+  --values "${HELM_DIR}/cert-manager/values.yaml" \
+  --wait
 
 # ── 2. OpenTelemetry Operator ─────────────────────────────────────────────────
 echo ""
-echo ">>> Installing OpenTelemetry Operator ${OTEL_OPERATOR_VERSION}…"
-kubectl apply -f \
-  "https://github.com/open-telemetry/opentelemetry-operator/releases/download/${OTEL_OPERATOR_VERSION}/opentelemetry-operator.yaml"
+echo ">>> Installing OpenTelemetry Operator ${OTEL_OPERATOR_CHART_VERSION} via Helm…"
+helm upgrade --install opentelemetry-operator open-telemetry/opentelemetry-operator \
+  --namespace opentelemetry-operator-system \
+  --create-namespace \
+  --version "${OTEL_OPERATOR_CHART_VERSION}" \
+  --values "${HELM_DIR}/opentelemetry-operator/values.yaml" \
+  --wait
 
-echo "  Waiting for operator to be ready…"
-kubectl wait --for=condition=ready pod \
-  -l app.kubernetes.io/name=opentelemetry-operator \
-  -n opentelemetry-operator-system \
-  --timeout=180s
-
-# ── 3. Collector ──────────────────────────────────────────────────────────────
+# ── 3. Collector CR ───────────────────────────────────────────────────────────
 echo ""
 echo ">>> Deploying OpenTelemetry Collector…"
 kubectl apply -f "${K8S_TELEMETRY}/namespace.yaml"
@@ -58,11 +57,11 @@ echo "    OTLP gRPC:  otel-collector.observability.svc.cluster.local:4317"
 echo "    OTLP HTTP:  otel-collector.observability.svc.cluster.local:4318"
 echo ""
 echo "  To enable vendor export:"
-echo "    1. Set OTLP_ENDPOINT and OTLP_AUTH_HEADER in:"
-echo "         infrastructure/k8s/telemetry/collector/secret.yaml"
-echo "    2. Uncomment the vendor exporters in:"
-echo "         infrastructure/k8s/telemetry/collector/collector.yaml"
-echo "    3. kubectl apply -f infrastructure/k8s/telemetry/collector/"
+echo "    1. Populate the secret (once per cluster):"
+echo "         kubectl create secret generic otel-vendor-credentials \\"
+echo "           -n observability \\"
+echo "           --from-literal=GRAFANA_AUTH=\$(printf '<instanceId>:<apiKey>' | base64)"
+echo "    2. kubectl apply -f infrastructure/k8s/telemetry/collector/"
 echo "       kubectl rollout restart deployment/otel-collector -n observability"
 echo ""
 kubectl get pods -n observability
