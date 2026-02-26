@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k6-traffic
+  namespace: webstore
+  labels:
+    app: k6-traffic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k6-traffic
+  template:
+    metadata:
+      labels:
+        app: k6-traffic
+    spec:
+      # Don't inject OTel auto-instrumentation — k6 isn't a Node.js app
+      containers:
+        - name: k6
+          image: grafana/k6:latest
+          imagePullPolicy: Always
+          # Loop forever: run a 12h test, brief pause, repeat.
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              while true; do
+                echo "[k6] Starting run: VU_COUNT=${VU_COUNT}"
+                k6 run \
+                  --env VU_COUNT=${VU_COUNT} \
+                  --env TARGET_URL=${TARGET_URL} \
+                  /scripts/test.js
+                echo "[k6] Run complete — restarting in 5s"
+                sleep 5
+              done
+          env:
+            # ── Adjust these to control load ─────────────────────────────────
+            # VU_COUNT: total virtual users
+            #   browse    = 60% of VUs  (steady product browsing)
+            #   checkout  = 30% of VUs  (full purchase flow)
+            #   spike     = 10% of VUs  (30-min sawtooth spike pattern)
+            - name: VU_COUNT
+              value: "10"
+            - name: TARGET_URL
+              value: "http://frontend.webstore.svc.cluster.local"
+          volumeMounts:
+            - name: k6-script
+              mountPath: /scripts
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+      volumes:
+        - name: k6-script
+          configMap:
+            name: k6-script
