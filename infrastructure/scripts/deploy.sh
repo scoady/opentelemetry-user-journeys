@@ -31,10 +31,23 @@ echo ""
 echo ">>> Applying OTel Instrumentation CR…"
 kubectl apply -f "${ROOT_DIR}/infrastructure/k8s/telemetry/instrumentation.yaml"
 
+# Wait for the OTel operator to reconcile the new CR before we restart pods.
+# The webhook looks up the CR by name at admission time — if the operator cache
+# hasn't synced yet it logs "no instances available" and skips injection.
+echo "  Waiting for operator to sync Instrumentation CR…"
+for i in $(seq 1 20); do
+  if kubectl get instrumentation/techmart -n webstore &>/dev/null 2>&1; then
+    sleep 5   # brief pause for operator informer cache to reflect the new CR
+    break
+  fi
+  printf "\r  attempt %d/20…" "$i"; sleep 2
+done
 echo ""
-echo ">>> Restarting API pods so OTel webhook injects the init container…"
-kubectl rollout restart deployment/api -n webstore
-kubectl rollout status  deployment/api -n webstore --timeout=120s
+
+echo ">>> Restarting API and inventory-svc pods so OTel webhook injects the init container…"
+kubectl rollout restart deployment/api deployment/inventory-svc -n webstore
+kubectl rollout status deployment/api           -n webstore --timeout=120s
+kubectl rollout status deployment/inventory-svc -n webstore --timeout=120s
 
 # Poll /api/health until we get JSON back. The frontend nginx proxies /api to
 # the API service, so a JSON response here confirms the full stack is live:

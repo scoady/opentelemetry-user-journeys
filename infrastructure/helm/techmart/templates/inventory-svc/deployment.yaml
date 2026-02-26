@@ -18,7 +18,7 @@ spec:
         app: inventory-svc
         app.kubernetes.io/component: inventory-svc
       annotations:
-        instrumentation.opentelemetry.io/inject-nodejs: "true"
+        instrumentation.opentelemetry.io/inject-nodejs: "techmart"
     spec:
       containers:
         - name: inventory-svc

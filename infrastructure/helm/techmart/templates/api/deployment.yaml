@@ -19,7 +19,7 @@ spec:
         app.kubernetes.io/component: api
       annotations:
         {{- if .Values.api.otel.injectNodejs }}
-        instrumentation.opentelemetry.io/inject-nodejs: "true"
+        instrumentation.opentelemetry.io/inject-nodejs: "techmart"
         {{- end }}
     spec:
       containers:
