@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# build-and-load.sh — Build Docker images and load them into the kind cluster
+# build-and-load.sh — Build Docker images, load them into kind, and restart pods
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -22,6 +22,17 @@ kind load docker-image webstore/api:latest --name techmart
 echo "  Loading webstore/frontend:latest…"
 kind load docker-image webstore/frontend:latest --name techmart
 
-echo ""
-echo "✓ Images loaded!"
-echo "  Run ./infrastructure/scripts/deploy.sh to apply Kubernetes manifests."
+# kind uses imagePullPolicy: Never, so pods keep the old image layer until
+# they are replaced. Force a rollout restart to pick up the freshly loaded images.
+if kubectl get namespace webstore &>/dev/null; then
+  echo ""
+  echo ">>> Restarting deployments to pick up new images…"
+  kubectl rollout restart deployment/api deployment/frontend -n webstore
+  kubectl rollout status deployment/api      -n webstore --timeout=120s
+  kubectl rollout status deployment/frontend -n webstore --timeout=120s
+  echo "✓ Deployments updated."
+else
+  echo ""
+  echo "✓ Images loaded."
+  echo "  (Namespace 'webstore' not found — run deploy.sh to apply manifests.)"
+fi
