@@ -1,0 +1,329 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus (Mimir)",
+      "description": "Grafana Cloud Prometheus / Mimir",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" },
+    { "type": "panel", "id": "stat", "name": "Stat", "version": "" },
+    { "type": "panel", "id": "gauge", "name": "Gauge", "version": "" },
+    { "type": "panel", "id": "timeseries", "name": "Time series", "version": "" }
+  ],
+  "title": "TechMart — Checkout SLO",
+  "description": "Deep-dive SLO dashboard for the checkout Critical User Journey. SLO target: 99.9% success rate, p99 < 2s.",
+  "uid": "techmart-checkout-slo",
+  "version": 1,
+  "schemaVersion": 38,
+  "tags": ["slo", "techmart", "checkout", "cuj"],
+  "time": { "from": "now-24h", "to": "now" },
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "pluginId": "prometheus",
+        "label": "Datasource",
+        "hide": 0,
+        "current": {}
+      },
+      {
+        "name": "window",
+        "type": "custom",
+        "label": "SLO window",
+        "query": "1h,6h,24h,7d,30d",
+        "options": [
+          { "text": "1h",  "value": "1h",  "selected": false },
+          { "text": "6h",  "value": "6h",  "selected": false },
+          { "text": "24h", "value": "24h", "selected": true  },
+          { "text": "7d",  "value": "7d",  "selected": false },
+          { "text": "30d", "value": "30d", "selected": false }
+        ],
+        "current": { "text": "24h", "value": "24h" },
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+
+    {
+      "type": "stat", "id": 1, "title": "Success Rate",
+      "description": "% of checkout requests returning non-5xx over the selected window. SLO target: ≥ 99.9%",
+      "gridPos": { "x": 0, "y": 0, "w": 5, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "100 * sum(increase(http_server_request_duration_seconds_count{http_route=\"/api/orders\",http_request_method=\"POST\",http_response_status_code!~\"5..\"}[$window])) / sum(increase(http_server_request_duration_seconds_count{http_route=\"/api/orders\",http_request_method=\"POST\"}[$window]))",
+        "legendFormat": ""
+      }],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 3,
+          "min": 99,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red",    "value": null  },
+              { "color": "yellow", "value": 99.5  },
+              { "color": "green",  "value": 99.9  }
+            ]
+          }
+        }
+      }
+    },
+
+    {
+      "type": "gauge", "id": 2, "title": "Error Budget Remaining (30d)",
+      "description": "How much of the 30-day error budget is left. Budget = 0.1% of requests may fail. Reaches 0% when you have burned through the allowed failures.",
+      "gridPos": { "x": 5, "y": 0, "w": 5, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "100 * (1 - (sum(increase(http_server_request_duration_seconds_count{http_route=\"/api/orders\",http_request_method=\"POST\",http_response_status_code=~\"5..\"}[30d])) / sum(increase(http_server_request_duration_seconds_count{http_route=\"/api/orders\",http_request_method=\"POST\"}[30d]))) / 0.001)",
+        "legendFormat": ""
+      }],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red",    "value": null },
+              { "color": "yellow", "value": 25   },
+              { "color": "green",  "value": 50   }
+            ]
+          }
+        }
+      }
+    },
+
+    {
+      "type": "stat", "id": 3, "title": "p99 Latency",
+      "description": "99th percentile checkout latency. SLO target: < 2s",
+      "gridPos": { "x": 10, "y": 0, "w": 4, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "1000 * histogram_quantile(0.99, sum(rate(http_server_request_duration_seconds_bucket{http_route=\"/api/orders\",http_request_method=\"POST\"}[5m])) by (le))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green",  "value": null },
+              { "color": "yellow", "value": 1000 },
+              { "color": "red",    "value": 2000 }
+            ]
+          }
+        }
+      }
+    },
+
+    {
+      "type": "stat", "id": 4, "title": "Throughput",
+      "gridPos": { "x": 14, "y": 0, "w": 4, "h": 2 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "sum(rate(http_server_request_duration_seconds_count{http_route=\"/api/orders\",http_request_method=\"POST\"}[5m]))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+
+    {
+      "type": "stat", "id": 5, "title": "Errors (window)",
+      "gridPos": { "x": 14, "y": 2, "w": 4, "h": 3 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "sum(increase(http_server_request_duration_seconds_count{http_route=\"/api/orders\",http_request_method=\"POST\",http_response_status_code=~\"5..\"}[$window]))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red",   "value": 1    }
+            ]
+          }
+        }
+      }
+    },
+
+    {
+      "type": "stat", "id": 6, "title": "p50 Latency",
+      "gridPos": { "x": 18, "y": 0, "w": 3, "h": 2 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "1000 * histogram_quantile(0.50, sum(rate(http_server_request_duration_seconds_bucket{http_route=\"/api/orders\",http_request_method=\"POST\"}[5m])) by (le))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+
+    {
+      "type": "stat", "id": 7, "title": "p95 Latency",
+      "gridPos": { "x": 18, "y": 2, "w": 3, "h": 3 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "1000 * histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{http_route=\"/api/orders\",http_request_method=\"POST\"}[5m])) by (le))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+
+    {
+      "type": "stat", "id": 8, "title": "Total Requests (window)",
+      "gridPos": { "x": 21, "y": 0, "w": 3, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "sum(increase(http_server_request_duration_seconds_count{http_route=\"/api/orders\",http_request_method=\"POST\"}[$window]))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+
+    {
+      "type": "timeseries", "id": 10, "title": "Error Rate vs SLO Target",
+      "description": "Red dashed line = 0.1% SLO budget. Any time the blue line exceeds it, you are burning error budget.",
+      "gridPos": { "x": 0, "y": 5, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "100 * sum(rate(http_server_request_duration_seconds_count{http_route=\"/api/orders\",http_request_method=\"POST\",http_response_status_code=~\"5..\"}[5m])) / sum(rate(http_server_request_duration_seconds_count{http_route=\"/api/orders\",http_request_method=\"POST\"}[5m]))",
+          "legendFormat": "error rate"
+        },
+        {
+          "expr": "vector(0.1)",
+          "legendFormat": "SLO target (0.1%)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "SLO target (0.1%)" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } },
+              { "id": "custom.lineStyle", "value": { "fill": "dash" } },
+              { "id": "custom.fillOpacity", "value": 0 }
+            ]
+          }
+        ]
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+
+    {
+      "type": "timeseries", "id": 11, "title": "Latency Percentiles",
+      "description": "p50 / p95 / p99 checkout latency over time.",
+      "gridPos": { "x": 12, "y": 5, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "1000 * histogram_quantile(0.50, sum(rate(http_server_request_duration_seconds_bucket{http_route=\"/api/orders\",http_request_method=\"POST\"}[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "1000 * histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{http_route=\"/api/orders\",http_request_method=\"POST\"}[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "1000 * histogram_quantile(0.99, sum(rate(http_server_request_duration_seconds_bucket{http_route=\"/api/orders\",http_request_method=\"POST\"}[5m])) by (le))",
+          "legendFormat": "p99"
+        },
+        {
+          "expr": "vector(2000)",
+          "legendFormat": "SLO target (2s)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": { "lineWidth": 2, "fillOpacity": 0 }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "SLO target (2s)" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } },
+              { "id": "custom.lineStyle", "value": { "fill": "dash" } }
+            ]
+          }
+        ]
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+
+    {
+      "type": "timeseries", "id": 12, "title": "Request Volume",
+      "description": "Total checkout request rate broken down by HTTP status code.",
+      "gridPos": { "x": 0, "y": 13, "w": 24, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "sum by (http_response_status_code) (rate(http_server_request_duration_seconds_count{http_route=\"/api/orders\",http_request_method=\"POST\"}[5m]))",
+          "legendFormat": "{{http_response_status_code}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "lineWidth": 1, "fillOpacity": 20, "stacking": { "mode": "normal" } }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byRegexp", "options": "^5.*" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "^4.*" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "^2.*" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }]
+          }
+        ]
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    }
+
+  ]
+}
