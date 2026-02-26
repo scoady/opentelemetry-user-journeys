@@ -34,16 +34,17 @@ api:
   image:
     repository: webstore/api
     tag: latest
-    # Never — required for kind (images loaded via `kind load docker-image`).
-    # Use IfNotPresent or Always when pulling from a real registry.
-    pullPolicy: Never
+    # IfNotPresent: use the locally-loaded image if present, pull from a registry
+    # otherwise. build-and-load.sh overrides tag with the git SHA so Helm detects
+    # a spec change on every build and triggers a rolling update automatically.
+    pullPolicy: IfNotPresent
 
   replicas: 2
   port: 3001
 
   otel:
     # Set to true to have the OTel Operator inject the Node.js SDK init container.
-    # Requires the Instrumentation CR to exist in the namespace (setup-telemetry.sh).
+    # The Instrumentation CR is managed as part of this Helm chart.
     injectNodejs: true
 
   resources:
@@ -59,7 +60,7 @@ frontend:
   image:
     repository: webstore/frontend
     tag: latest
-    pullPolicy: Never
+    pullPolicy: IfNotPresent
 
   replicas: 2
 
@@ -83,7 +84,7 @@ inventorySvc:
   image:
     repository: webstore/inventory-svc
     tag: latest
-    pullPolicy: Never
+    pullPolicy: IfNotPresent
 
   replicas: 1
   port: 3002
