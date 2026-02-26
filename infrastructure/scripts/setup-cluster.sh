@@ -1,29 +1,35 @@
 #!/usr/bin/env bash
-# setup-cluster.sh — Create the kind cluster and install the NGINX ingress controller
+# setup-cluster.sh — Create the kind cluster, install NGINX ingress, and add
+#                    the Helm repos needed by setup-telemetry.sh.
+#
+# Run once per machine. Safe to re-run — all steps are idempotent.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 KIND_CONFIG="${ROOT_DIR}/infrastructure/kind/cluster.yaml"
 
-# ── 1. Ensure kind is installed ──────────────────────────────────────────────
-if ! command -v kind &>/dev/null; then
-  echo ">>> kind not found. Installing via Homebrew…"
-  if ! command -v brew &>/dev/null; then
-    echo "ERROR: Homebrew not found. Please install kind manually: https://kind.sigs.k8s.io/docs/user/quick-start/"
-    exit 1
+# ── 1. Ensure required tools are installed ────────────────────────────────────
+for tool in kind kubectl helm; do
+  if ! command -v "${tool}" &>/dev/null; then
+    echo ">>> ${tool} not found. Installing via Homebrew…"
+    if ! command -v brew &>/dev/null; then
+      echo "ERROR: Homebrew not found. Install ${tool} manually and re-run."
+      exit 1
+    fi
+    brew install "${tool}"
+    echo ">>> ${tool} installed: $(${tool} version --short 2>/dev/null || ${tool} version)"
   fi
-  brew install kind
-  echo ">>> kind installed: $(kind version)"
-fi
+done
 
-# ── 2. Ensure kubectl is installed ───────────────────────────────────────────
-if ! command -v kubectl &>/dev/null; then
-  echo ">>> kubectl not found. Installing via Homebrew…"
-  brew install kubectl
-fi
+# ── 2. Add Helm repos (idempotent) ────────────────────────────────────────────
+echo ">>> Adding Helm repositories…"
+helm repo add jetstack        https://charts.jetstack.io                               --force-update
+helm repo add open-telemetry  https://open-telemetry.github.io/opentelemetry-helm-charts --force-update
+helm repo update
+echo "  Repos: jetstack, open-telemetry — up to date."
 
-# ── 3. Create (or reuse) the cluster ─────────────────────────────────────────
+# ── 3. Create (or reuse) the cluster ──────────────────────────────────────────
 if kind get clusters 2>/dev/null | grep -q "^techmart$"; then
   echo ">>> Cluster 'techmart' already exists, skipping creation."
 else
@@ -46,4 +52,11 @@ kubectl wait --namespace ingress-nginx \
 
 echo ""
 echo "✓ Cluster 'techmart' is ready!"
-echo "  Run ./infrastructure/scripts/build-and-load.sh to build and load images."
+echo ""
+echo "  Next steps:"
+echo "    1. Build and load images:"
+echo "         ./infrastructure/scripts/build-and-load.sh"
+echo "    2. Deploy the application:"
+echo "         ./infrastructure/scripts/deploy.sh"
+echo "    3. Set up the OTel telemetry stack:"
+echo "         ./infrastructure/scripts/setup-telemetry.sh"

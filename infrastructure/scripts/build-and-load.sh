@@ -29,8 +29,7 @@ kind load docker-image webstore/frontend:latest --name techmart
 if kubectl get namespace webstore &>/dev/null; then
   echo ""
   echo ">>> Applying k8s manifests…"
-  # Re-apply every manifest so manifest edits take effect alongside image changes.
-  # kubectl apply is idempotent — unchanged resources are left untouched.
+
   kubectl apply -f "${K8S_DIR}/namespace.yaml"
 
   echo "  database tier…"
@@ -49,6 +48,10 @@ if kubectl get namespace webstore &>/dev/null; then
   kubectl apply -f "${K8S_DIR}/frontend/deployment.yaml"
   kubectl apply -f "${K8S_DIR}/frontend/service.yaml"
   kubectl apply -f "${K8S_DIR}/frontend/ingress.yaml"
+
+  echo "  traffic generator…"
+  kubectl apply -f "${K8S_DIR}/traffic/configmap.yaml"
+  kubectl apply -f "${K8S_DIR}/traffic/deployment.yaml"
 
   # kind uses imagePullPolicy: Never — running pods hold the old image layer
   # until replaced. Force a rollout so new pods start with the freshly loaded image.
