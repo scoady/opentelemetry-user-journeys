@@ -25,22 +25,18 @@ spec:
           args:
             - |
               while true; do
-                echo "[k6] Starting run: VU_COUNT=${VU_COUNT}"
+                echo "[k6] Starting run: ${RPS} req/s"
                 k6 run \
-                  --env VU_COUNT=${VU_COUNT} \
+                  --env RPS=${RPS} \
                   --env TARGET_URL=${TARGET_URL} \
                   /scripts/test.js
                 echo "[k6] Run complete — restarting in 5s"
                 sleep 5
               done
           env:
-            # ── Adjust these to control load ─────────────────────────────────
-            # VU_COUNT: total virtual users
-            #   browse    = 60% of VUs  (steady product browsing)
-            #   checkout  = 30% of VUs  (full purchase flow)
-            #   spike     = 10% of VUs  (30-min sawtooth spike pattern)
-            - name: VU_COUNT
-              value: "10"
+            # RPS: requests per second — edit and rollout restart to change rate
+            - name: RPS
+              value: "5"
             - name: TARGET_URL
               value: "http://frontend.webstore.svc.cluster.local"
           volumeMounts:
