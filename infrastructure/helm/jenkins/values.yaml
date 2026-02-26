@@ -13,6 +13,7 @@
 controller:
   admin:
     username: admin
+    password: admin
 
   # Pin to latest Jenkins LTS (jdk21) so plugins can install their latest
   # compatible versions without Jenkins-version mismatches.
@@ -52,21 +53,15 @@ controller:
       nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
 
-  # ── Host repo mount ─────────────────────────────────────────────────────────
-  # Mounts the local git repo read-only at /src/repo inside the controller pod.
-  # Agent pods get the same mount via the JCasC pod templates below.
-  # On macOS + Docker Desktop, /Users is shared into the Docker VM automatically
-  # so this hostPath is accessible from kind nodes.
-  volumes:
-    - name: src-repo
-      hostPath:
-        path: /Users/ayx106492/git/otel-slos
-        type: Directory
-
-  containerVolumeMounts:
-    - name: src-repo
-      mountPath: /src/repo
-      readOnly: true
+  # ── GitHub SSH credential ───────────────────────────────────────────────────
+  # Injects the private key from k8s secret 'github-ssh-key' as an env var so
+  # JCasC can register it as a Jenkins SSH credential for Git SCM checkouts.
+  containerEnv:
+    - name: GITHUB_SSH_KEY
+      valueFrom:
+        secretKeyRef:
+          name: github-ssh-key
+          key: ssh-privatekey
 
   # ── JCasC ───────────────────────────────────────────────────────────────────
   JCasC:
@@ -77,6 +72,24 @@ controller:
       welcome-message: |
         jenkins:
           systemMessage: "TechMart CI/CD — kind dev cluster.\n\nPipelines auto-configured: techmart-build, techmart-deploy."
+
+      # SSH credential for GitHub clones + skip host-key verification (local dev)
+      credentials: |
+        credentials:
+          system:
+            domainCredentials:
+              - credentials:
+                  - basicSSHUserPrivateKey:
+                      scope: GLOBAL
+                      id: "github-ssh"
+                      username: "git"
+                      description: "GitHub deploy key"
+                      privateKeySource:
+                        directEntry:
+                          privateKey: "${GITHUB_SSH_KEY}"
+        security:
+          gitHostKeyVerificationConfiguration:
+            sshHostKeyVerificationStrategy: "noHostKeyVerificationStrategy"
 
       # Kubernetes cloud + pod templates for Kaniko and Helm agents
       kubernetes-cloud: |
@@ -111,10 +124,6 @@ controller:
                     workspaceVolume:
                       emptyDirWorkspaceVolume:
                         memory: false
-                    volumes:
-                      - hostPathVolume:
-                          hostPath: "/Users/ayx106492/git/otel-slos"
-                          mountPath: "/src/repo"
                     containers:
                       - name: "jnlp"
                         image: "jenkins/inbound-agent:3327.v868139a_d00e0-7"
@@ -151,10 +160,6 @@ controller:
                     workspaceVolume:
                       emptyDirWorkspaceVolume:
                         memory: false
-                    volumes:
-                      - hostPathVolume:
-                          hostPath: "/Users/ayx106492/git/otel-slos"
-                          mountPath: "/src/repo"
                     containers:
                       - name: "jnlp"
                         image: "jenkins/inbound-agent:3327.v868139a_d00e0-7"
@@ -193,7 +198,10 @@ controller:
                   cpsScm {
                     scm {
                       git {
-                        remote { url('file:///src/repo') }
+                        remote {
+                          url('git@github.com:scoady/opentelemetry-user-journeys.git')
+                          credentials('github-ssh')
+                        }
                         branch('*/main')
                       }
                     }
@@ -217,7 +225,10 @@ controller:
                   cpsScm {
                     scm {
                       git {
-                        remote { url('file:///src/repo') }
+                        remote {
+                          url('git@github.com:scoady/opentelemetry-user-journeys.git')
+                          credentials('github-ssh')
+                        }
                         branch('*/main')
                       }
                     }
@@ -241,6 +252,7 @@ controller:
               users:
                 - id: "admin"
                   name: "Admin"
+                  password: "admin"
 
 # ── Agent defaults ───────────────────────────────────────────────────────────
 agent:

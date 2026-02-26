@@ -3,9 +3,9 @@
 // to the in-cluster Docker registry, then triggers the deploy pipeline.
 //
 // Requires agent label 'kaniko' (configured via JCasC in jenkins/values.yaml):
-//   - jnlp container: Jenkins agent
+//   - jnlp container: Jenkins agent (clones repo from GitHub into workspace)
 //   - kaniko container: gcr.io/kaniko-project/executor:v1.23.2-debug
-//   - Both share an emptyDir workspace; /src/repo hostPath mount for build context
+//   - Both share an emptyDir workspace volume for build context
 
 def REGISTRY = "registry.registry.svc.cluster.local:5000"
 def IMAGE_TAG = ""
@@ -22,17 +22,17 @@ pipeline {
   stages {
 
     // ── Stage 1: Compute image tag ─────────────────────────────────────────
-    // Reads the git SHA from the hostPath-mounted repo (/src/repo).
+    // Reads the git SHA from the SCM-checked-out workspace.
     // Appends -dev if the working tree has uncommitted changes.
     stage('Tag') {
       steps {
         script {
           def sha = sh(
-            script: "git -C /src/repo rev-parse --short HEAD",
+            script: "git rev-parse --short HEAD",
             returnStdout: true
           ).trim()
           def dirty = sh(
-            script: "git -C /src/repo status --porcelain 2>/dev/null | wc -l | tr -d ' '",
+            script: "git status --porcelain 2>/dev/null | wc -l | tr -d ' '",
             returnStdout: true
           ).trim()
           IMAGE_TAG = (dirty != "0") ? "${sha}-dev" : sha
@@ -44,14 +44,10 @@ pipeline {
 
     // ── Stage 2: Build and push (3 images) ────────────────────────────────
     // Each stage calls the kaniko executor directly from the sidecar container.
-    // --context=dir:///src/repo/<service>  uses Kaniko's dir:// scheme to build
-    //   from the hostPath-mounted directory (three slashes = dir:// + abs path).
+    // --context uses the workspace directory checked out by the SCM step.
     // --insecure / --skip-tls-verify allow plain-HTTP access to the in-cluster
     //   registry (which has no TLS certificate in this local dev setup).
     // Both SHA tag and :latest are pushed so `helm upgrade` can use either.
-    // Note: the three parallel stages share one kaniko container — they are
-    //   serialized within the pod. For true parallelism, declare
-    //   `agent { label 'kaniko' }` inside each parallel branch (spawns 3 pods).
     stage('Build images') {
       parallel {
 
@@ -60,8 +56,8 @@ pipeline {
             container('kaniko') {
               sh """
                 /kaniko/executor \\
-                  --dockerfile=/src/repo/api/Dockerfile \\
-                  --context=dir:///src/repo/api \\
+                  --dockerfile=${WORKSPACE}/api/Dockerfile \\
+                  --context=dir://${WORKSPACE}/api \\
                   --destination=${REGISTRY}/webstore/api:${IMAGE_TAG} \\
                   --destination=${REGISTRY}/webstore/api:latest \\
                   --insecure \\
@@ -80,8 +76,8 @@ pipeline {
             container('kaniko') {
               sh """
                 /kaniko/executor \\
-                  --dockerfile=/src/repo/inventory-svc/Dockerfile \\
-                  --context=dir:///src/repo/inventory-svc \\
+                  --dockerfile=${WORKSPACE}/inventory-svc/Dockerfile \\
+                  --context=dir://${WORKSPACE}/inventory-svc \\
                   --destination=${REGISTRY}/webstore/inventory-svc:${IMAGE_TAG} \\
                   --destination=${REGISTRY}/webstore/inventory-svc:latest \\
                   --insecure \\
@@ -100,8 +96,8 @@ pipeline {
             container('kaniko') {
               sh """
                 /kaniko/executor \\
-                  --dockerfile=/src/repo/frontend/Dockerfile \\
-                  --context=dir:///src/repo/frontend \\
+                  --dockerfile=${WORKSPACE}/frontend/Dockerfile \\
+                  --context=dir://${WORKSPACE}/frontend \\
                   --destination=${REGISTRY}/webstore/frontend:${IMAGE_TAG} \\
                   --destination=${REGISTRY}/webstore/frontend:latest \\
                   --insecure \\

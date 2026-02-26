@@ -6,12 +6,10 @@
 // just-built git SHA), or manually from the Jenkins UI with any tag.
 //
 // Requires agent label 'helm' (configured via JCasC in jenkins/values.yaml):
-//   - jnlp container: Jenkins agent
+//   - jnlp container: Jenkins agent (clones repo from GitHub into workspace)
 //   - helm container: alpine/helm:3.16.4 (includes both helm and kubectl)
-//   - /src/repo hostPath mount for chart access
 
 def REGISTRY = "registry.registry.svc.cluster.local:5000"
-def CHART_DIR = "/src/repo/infrastructure/helm/techmart"
 
 pipeline {
   agent { label 'helm' }
@@ -53,10 +51,10 @@ pipeline {
       steps {
         container('helm') {
           sh """
-            helm upgrade techmart ${CHART_DIR} \\
+            helm upgrade techmart ${WORKSPACE}/infrastructure/helm/techmart \\
               --namespace webstore \\
               --create-namespace \\
-              --values ${CHART_DIR}/values.yaml \\
+              --values ${WORKSPACE}/infrastructure/helm/techmart/values.yaml \\
               --set global.imageRegistry=${REGISTRY} \\
               --set api.image.repository=webstore/api \\
               --set api.image.tag=${params.IMAGE_TAG} \\
