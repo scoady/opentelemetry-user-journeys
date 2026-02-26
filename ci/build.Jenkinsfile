@@ -48,70 +48,66 @@ pipeline {
     // --insecure / --skip-tls-verify allow plain-HTTP access to the in-cluster
     //   registry (which has no TLS certificate in this local dev setup).
     // Both SHA tag and :latest are pushed so `helm upgrade` can use either.
-    stage('Build images') {
-      parallel {
-
-        stage('api') {
-          steps {
-            container('kaniko') {
-              sh """
-                /kaniko/executor \\
-                  --dockerfile=${WORKSPACE}/api/Dockerfile \\
-                  --context=dir://${WORKSPACE}/api \\
-                  --destination=${REGISTRY}/webstore/api:${IMAGE_TAG} \\
-                  --destination=${REGISTRY}/webstore/api:latest \\
-                  --insecure \\
-                  --insecure-pull \\
-                  --skip-tls-verify \\
-                  --skip-tls-verify-pull \\
-                  --cache=false \\
-                  --verbosity=info
-              """
-            }
-          }
+    // Builds run sequentially because kaniko mutates the root filesystem —
+    // parallel execution in the same container corrupts later builds.
+    stage('Build api') {
+      steps {
+        container('kaniko') {
+          sh """
+            /kaniko/executor \\
+              --dockerfile=${WORKSPACE}/api/Dockerfile \\
+              --context=dir://${WORKSPACE}/api \\
+              --destination=${REGISTRY}/webstore/api:${IMAGE_TAG} \\
+              --destination=${REGISTRY}/webstore/api:latest \\
+              --insecure \\
+              --insecure-pull \\
+              --skip-tls-verify \\
+              --skip-tls-verify-pull \\
+              --cache=false \\
+              --verbosity=info
+          """
         }
+      }
+    }
 
-        stage('inventory-svc') {
-          steps {
-            container('kaniko') {
-              sh """
-                /kaniko/executor \\
-                  --dockerfile=${WORKSPACE}/inventory-svc/Dockerfile \\
-                  --context=dir://${WORKSPACE}/inventory-svc \\
-                  --destination=${REGISTRY}/webstore/inventory-svc:${IMAGE_TAG} \\
-                  --destination=${REGISTRY}/webstore/inventory-svc:latest \\
-                  --insecure \\
-                  --insecure-pull \\
-                  --skip-tls-verify \\
-                  --skip-tls-verify-pull \\
-                  --cache=false \\
-                  --verbosity=info
-              """
-            }
-          }
+    stage('Build inventory-svc') {
+      steps {
+        container('kaniko') {
+          sh """
+            /kaniko/executor \\
+              --dockerfile=${WORKSPACE}/inventory-svc/Dockerfile \\
+              --context=dir://${WORKSPACE}/inventory-svc \\
+              --destination=${REGISTRY}/webstore/inventory-svc:${IMAGE_TAG} \\
+              --destination=${REGISTRY}/webstore/inventory-svc:latest \\
+              --insecure \\
+              --insecure-pull \\
+              --skip-tls-verify \\
+              --skip-tls-verify-pull \\
+              --cache=false \\
+              --verbosity=info
+          """
         }
+      }
+    }
 
-        stage('frontend') {
-          steps {
-            container('kaniko') {
-              sh """
-                /kaniko/executor \\
-                  --dockerfile=${WORKSPACE}/frontend/Dockerfile \\
-                  --context=dir://${WORKSPACE}/frontend \\
-                  --destination=${REGISTRY}/webstore/frontend:${IMAGE_TAG} \\
-                  --destination=${REGISTRY}/webstore/frontend:latest \\
-                  --insecure \\
-                  --insecure-pull \\
-                  --skip-tls-verify \\
-                  --skip-tls-verify-pull \\
-                  --cache=false \\
-                  --verbosity=info
-              """
-            }
-          }
+    stage('Build frontend') {
+      steps {
+        container('kaniko') {
+          sh """
+            /kaniko/executor \\
+              --dockerfile=${WORKSPACE}/frontend/Dockerfile \\
+              --context=dir://${WORKSPACE}/frontend \\
+              --destination=${REGISTRY}/webstore/frontend:${IMAGE_TAG} \\
+              --destination=${REGISTRY}/webstore/frontend:latest \\
+              --insecure \\
+              --insecure-pull \\
+              --skip-tls-verify \\
+              --skip-tls-verify-pull \\
+              --cache=false \\
+              --verbosity=info
+          """
         }
-
-      } // end parallel
+      }
     }
 
     // ── Stage 3: Trigger deploy ────────────────────────────────────────────
