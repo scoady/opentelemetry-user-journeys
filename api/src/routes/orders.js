@@ -1,7 +1,46 @@
+const http = require('http');
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { withJourney } = require('../tracing');
+
+const INVENTORY_URL = process.env.INVENTORY_URL || 'http://inventory-svc:3002';
+
+// Calls inventory-svc to reserve stock before committing the order.
+// Uses the built-in http module so the OTel SDK automatically:
+//   1. Creates a child span for the outbound call
+//   2. Injects traceparent + baggage headers (carries cuj.name=checkout)
+function reserveInventory(items) {
+  return new Promise((resolve, reject) => {
+    const body = Buffer.from(JSON.stringify({ items }));
+    const url  = new URL('/reserve', INVENTORY_URL);
+
+    const req = http.request({
+      hostname: url.hostname,
+      port:     url.port || 80,
+      path:     url.pathname,
+      method:   'POST',
+      headers: {
+        'Content-Type':   'application/json',
+        'Content-Length': body.length,
+      },
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(JSON.parse(data));
+        } else {
+          reject(new Error(`Inventory reservation failed (${res.statusCode}): ${data}`));
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
 
 // POST /api/orders                                     CUJ: checkout
 router.post('/', async (req, res) => {
@@ -33,6 +72,11 @@ router.post('/', async (req, res) => {
         if (!product) throw new Error(`Product ${item.product_id} not found`);
         if (product.stock < item.quantity) throw new Error(`Insufficient stock for "${product.name}"`);
       }
+
+      // Reserve stock in the inventory service.
+      // This call is inside withJourney so the OTel SDK injects the baggage
+      // header automatically — inventory-svc will see cuj.name=checkout.
+      await reserveInventory(items);
 
       const total = items.reduce((sum, item) => {
         return sum + (parseFloat(productMap[item.product_id].price) * item.quantity);

@@ -7,4 +7,5 @@ metadata:
     {{- include "techmart.labels" . | nindent 4 }}
     app.kubernetes.io/component: api
 data:
-  PORT: {{ .Values.api.port | quote }}
+  PORT:          {{ .Values.api.port | quote }}
+  INVENTORY_URL: "http://inventory-svc:{{ .Values.inventorySvc.port }}"

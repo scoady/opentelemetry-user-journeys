@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-svc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "techmart.labels" . | nindent 4 }}
+    app: inventory-svc
+    app.kubernetes.io/component: inventory-svc
+spec:
+  replicas: {{ .Values.inventorySvc.replicas }}
+  selector:
+    matchLabels:
+      app: inventory-svc
+  template:
+    metadata:
+      labels:
+        app: inventory-svc
+        app.kubernetes.io/component: inventory-svc
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: "true"
+    spec:
+      containers:
+        - name: inventory-svc
+          image: "{{ .Values.inventorySvc.image.repository }}:{{ .Values.inventorySvc.image.tag }}"
+          imagePullPolicy: {{ .Values.inventorySvc.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.inventorySvc.port }}
+          env:
+            - name: PORT
+              value: {{ .Values.inventorySvc.port | quote }}
+            - name: ARTIFICIAL_DELAY_MS
+              value: {{ .Values.inventorySvc.artificialDelayMs | quote }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.inventorySvc.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.inventorySvc.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.inventorySvc.resources | nindent 12 }}

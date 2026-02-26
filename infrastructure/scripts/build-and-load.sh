@@ -14,17 +14,21 @@ VALUES_FILE="${CHART_DIR}/values.yaml"
 # ── 1. Build images ───────────────────────────────────────────────────────────
 echo ">>> Building Docker images…"
 
-echo "  [1/2] Building API image (webstore/api:latest)…"
+echo "  [1/3] Building API image (webstore/api:latest)…"
 docker build -t webstore/api:latest "${ROOT_DIR}/api"
 
-echo "  [2/2] Building Frontend image (webstore/frontend:latest)…"
+echo "  [2/3] Building Inventory service image (webstore/inventory-svc:latest)…"
+docker build -t webstore/inventory-svc:latest "${ROOT_DIR}/inventory-svc"
+
+echo "  [3/3] Building Frontend image (webstore/frontend:latest)…"
 docker build -t webstore/frontend:latest "${ROOT_DIR}/frontend"
 
 # ── 2. Load into kind ─────────────────────────────────────────────────────────
 echo ""
 echo ">>> Loading images into kind cluster 'techmart'…"
-kind load docker-image webstore/api:latest      --name techmart
-kind load docker-image webstore/frontend:latest --name techmart
+kind load docker-image webstore/api:latest           --name techmart
+kind load docker-image webstore/inventory-svc:latest --name techmart
+kind load docker-image webstore/frontend:latest      --name techmart
 
 # ── 3. Helm upgrade (picks up manifest changes) ───────────────────────────────
 if kubectl get namespace webstore &>/dev/null; then
@@ -40,9 +44,10 @@ if kubectl get namespace webstore &>/dev/null; then
   # until replaced. Force a rollout so new pods start with the freshly loaded image.
   echo ""
   echo ">>> Restarting app deployments to pick up new images…"
-  kubectl rollout restart deployment/api deployment/frontend -n webstore
-  kubectl rollout status  deployment/api      -n webstore --timeout=120s
-  kubectl rollout status  deployment/frontend -n webstore --timeout=120s
+  kubectl rollout restart deployment/api deployment/inventory-svc deployment/frontend -n webstore
+  kubectl rollout status  deployment/api           -n webstore --timeout=120s
+  kubectl rollout status  deployment/inventory-svc -n webstore --timeout=120s
+  kubectl rollout status  deployment/frontend      -n webstore --timeout=120s
 
   echo ""
   echo "✓ Update complete. Open http://localhost in your browser."
