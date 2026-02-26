@@ -7,6 +7,13 @@
 #     --values ./infrastructure/helm/techmart/values.yaml
 # ─────────────────────────────────────────────────────────────────────────────
 
+# ── Global ────────────────────────────────────────────────────────────────────
+global:
+  # Registry prefix prepended to every image reference.
+  # Empty (default) → no prefix, for the local build-and-load.sh workflow.
+  # Jenkins CI sets this to: registry.registry.svc.cluster.local:5000
+  imageRegistry: ""
+
 # ── PostgreSQL ────────────────────────────────────────────────────────────────
 postgres:
   image:

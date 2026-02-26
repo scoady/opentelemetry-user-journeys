@@ -1,6 +1,14 @@
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 name: techmart
+# Pre-configure containerd on all nodes to scan /etc/containerd/certs.d/ for
+# per-registry hosts.toml files. setup-cicd.sh writes the actual hosts.toml
+# for registry.registry.svc.cluster.local:5000 at runtime (after the registry
+# Service ClusterIP is known). This block only applies on fresh cluster creates.
+containerdConfigPatches:
+  - |-
+    [plugins."io.containerd.grpc.v1.cri".registry]
+      config_path = "/etc/containerd/certs.d"
 nodes:
   - role: control-plane
     kubeadmConfigPatches:

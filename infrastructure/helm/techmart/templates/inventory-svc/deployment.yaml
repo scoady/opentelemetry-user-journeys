@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: inventory-svc
-          image: "{{ .Values.inventorySvc.image.repository }}:{{ .Values.inventorySvc.image.tag }}"
+          image: "{{ if .Values.global.imageRegistry }}{{ .Values.global.imageRegistry }}/{{ end }}{{ .Values.inventorySvc.image.repository }}:{{ .Values.inventorySvc.image.tag }}"
           imagePullPolicy: {{ .Values.inventorySvc.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.inventorySvc.port }}

@@ -1,0 +1,23 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Docker Registry Helm values — kind / local-dev defaults
+#
+# In-cluster address after deploy:
+#   registry.registry.svc.cluster.local:5000
+#
+# kind nodes are patched by setup-cicd.sh to allow plain-HTTP pull
+# from this address (no TLS required for local dev).
+# ─────────────────────────────────────────────────────────────────────────────
+
+image:
+  tag: "2.8.3"
+
+# 20 Gi PVC for image storage.
+storage: 20Gi
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

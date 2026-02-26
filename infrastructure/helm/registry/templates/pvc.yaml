@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: registry-storage
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: registry
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: {{ .Values.storage }}

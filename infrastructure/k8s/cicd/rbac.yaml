@@ -1,0 +1,55 @@
+# Jenkins deployer RBAC — allows the jenkins ServiceAccount (namespace: cicd)
+# to run `helm upgrade` against the webstore namespace and spawn agent pods
+# in the cicd namespace.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: jenkins-deployer
+rules:
+  # Core resources — Services, ConfigMaps, Secrets, PVCs, Pods
+  - apiGroups: [""]
+    resources:
+      - services
+      - configmaps
+      - secrets
+      - persistentvolumeclaims
+      - namespaces
+      - pods
+      - pods/log
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Workloads
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - replicasets
+      - statefulsets
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Ingresses
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Helm pre-install/pre-upgrade hooks use Jobs
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # OTel CRDs (for Instrumentation hook in the techmart chart)
+  - apiGroups: ["opentelemetry.io"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jenkins-deployer-binding
+subjects:
+  - kind: ServiceAccount
+    name: jenkins
+    namespace: cicd
+roleRef:
+  kind: ClusterRole
+  name: jenkins-deployer
+  apiGroup: rbac.authorization.k8s.io

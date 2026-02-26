@@ -26,8 +26,9 @@ done
 echo ">>> Adding Helm repositories…"
 helm repo add jetstack        https://charts.jetstack.io                               --force-update
 helm repo add open-telemetry  https://open-telemetry.github.io/opentelemetry-helm-charts --force-update
+helm repo add jenkins         https://charts.jenkins.io                                   --force-update
 helm repo update
-echo "  Repos: jetstack, open-telemetry — up to date."
+echo "  Repos: jetstack, open-telemetry, jenkins — up to date."
 
 # ── 3. Create (or reuse) the cluster ──────────────────────────────────────────
 if kind get clusters 2>/dev/null | grep -q "^techmart$"; then
