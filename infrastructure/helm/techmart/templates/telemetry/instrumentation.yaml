@@ -1,0 +1,42 @@
+{{- if .Values.api.otel.injectNodejs }}
+# Deployed as a pre-install / pre-upgrade hook so the OTel operator reconciles
+# this CR before the app pods are created. The admission webhook looks up the CR
+# by name ("techmart") at pod creation time — if it doesn't exist yet the webhook
+# skips injection and the SDK never loads.
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: techmart
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "techmart.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook":               pre-install,pre-upgrade
+    "helm.sh/hook-weight":        "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  exporter:
+    # Node.js auto-instrumentation uses OTLP/HTTP (port 4318).
+    endpoint: http://otel-collector.observability.svc.cluster.local:4318
+
+  propagators:
+    - tracecontext
+    - baggage
+
+  sampler:
+    type: parentbased_traceidratio
+    argument: "1"
+
+  nodejs:
+    env:
+      - name: OTEL_METRICS_EXPORTER
+        value: otlp
+      - name: OTEL_LOGS_EXPORTER
+        value: otlp
+      # 60-second metric export interval (ms).
+      - name: OTEL_METRIC_EXPORT_INTERVAL
+        value: "60000"
+      # Suppress SDK-internal debug chatter.
+      - name: OTEL_LOG_LEVEL
+        value: warn
+{{- end }}

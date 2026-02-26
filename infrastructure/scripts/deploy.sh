@@ -15,43 +15,36 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 CHART_DIR="${ROOT_DIR}/infrastructure/helm/techmart"
 VALUES_FILE="${CHART_DIR}/values.yaml"
 
-echo ">>> Deploying TechMart via Helm…"
+# Use the same SHA tag that build-and-load.sh produced for these images.
+TAG="$(git -C "${ROOT_DIR}" rev-parse --short HEAD)"
+if [[ -n "$(git -C "${ROOT_DIR}" status --porcelain 2>/dev/null)" ]]; then
+  TAG="${TAG}-dev"
+fi
+echo ">>> Deploying TechMart (tag=${TAG})…"
 
+# The Instrumentation CR is a pre-install hook inside the chart — it is created
+# before app pods so the OTel webhook has a CR to resolve at pod admission time.
 helm upgrade --install techmart "${CHART_DIR}" \
   --namespace webstore \
   --create-namespace \
   --values "${VALUES_FILE}" \
+  --set "api.image.tag=${TAG}" \
+  --set "inventorySvc.image.tag=${TAG}" \
+  --set "frontend.image.tag=${TAG}" \
   --wait \
   --timeout 5m
 
-# ── Instrumentation CR ────────────────────────────────────────────────────────
-# Applied after Helm creates the webstore namespace. Tells the OTel Operator to
-# inject the Node.js SDK init container into pods with the inject-nodejs annotation.
+# One rollout restart is still needed after a fresh install: the OTel operator's
+# informer cache may not have synced the newly-created Instrumentation CR by the
+# time the admission webhook fired for the initial pods. The restart triggers a
+# second admission pass once the cache is warm.
 echo ""
-echo ">>> Applying OTel Instrumentation CR…"
-kubectl apply -f "${ROOT_DIR}/infrastructure/k8s/telemetry/instrumentation.yaml"
-
-# Wait for the OTel operator to reconcile the new CR before we restart pods.
-# The webhook looks up the CR by name at admission time — if the operator cache
-# hasn't synced yet it logs "no instances available" and skips injection.
-echo "  Waiting for operator to sync Instrumentation CR…"
-for i in $(seq 1 20); do
-  if kubectl get instrumentation/techmart -n webstore &>/dev/null 2>&1; then
-    sleep 5   # brief pause for operator informer cache to reflect the new CR
-    break
-  fi
-  printf "\r  attempt %d/20…" "$i"; sleep 2
-done
-echo ""
-
-echo ">>> Restarting API and inventory-svc pods so OTel webhook injects the init container…"
+echo ">>> Restarting instrumented pods so OTel webhook picks up the Instrumentation CR…"
 kubectl rollout restart deployment/api deployment/inventory-svc -n webstore
-kubectl rollout status deployment/api           -n webstore --timeout=120s
-kubectl rollout status deployment/inventory-svc -n webstore --timeout=120s
+kubectl rollout status  deployment/api           -n webstore --timeout=120s
+kubectl rollout status  deployment/inventory-svc -n webstore --timeout=120s
 
-# Poll /api/health until we get JSON back. The frontend nginx proxies /api to
-# the API service, so a JSON response here confirms the full stack is live:
-# ingress → frontend nginx → API → Postgres.
+# Poll /api/health until the full stack is reachable.
 echo ""
 echo ">>> Waiting for full stack to be reachable…"
 for i in $(seq 1 30); do
