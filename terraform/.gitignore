@@ -1,0 +1,12 @@
+# Terraform state — may contain secrets, never commit
+*.tfstate
+*.tfstate.backup
+*.tfstate.*.backup
+
+# Local variable overrides — contains API keys
+terraform.tfvars
+*.auto.tfvars
+
+# Provider plugin cache
+.terraform/
+.terraform.lock.hcl

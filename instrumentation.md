@@ -487,9 +487,9 @@ Replace `span_name="cuj.checkout"` with any of:
 
 ## Grafana Dashboards
 
-Two importable JSON dashboards are in `infrastructure/grafana/dashboards/`.
+Grafana dashboards live in `terraform/grafana/dashboards/` and are deployed via Terraform (`cd terraform && terraform apply`).
 
-**Import:** Grafana → Dashboards → Import → Upload JSON → map `DS_PROMETHEUS`
+**Import manually (optional):** Grafana → Dashboards → Import → Upload JSON → pick your Prometheus datasource
 to your Grafana Cloud Mimir data source.
 
 ### `slo-overview.json`
@@ -602,5 +602,9 @@ OTel SDK already propagates it via the `baggage` HTTP header.
 | `infrastructure/helm/cert-manager/values.yaml`                | cert-manager Helm values                             |
 | `infrastructure/helm/opentelemetry-operator/values.yaml`      | OTel Operator Helm values                            |
 | `infrastructure/scripts/setup-telemetry.sh`                   | One-shot install: cert-manager + operator + CR       |
-| `infrastructure/grafana/dashboards/slo-overview.json`         | All-CUJ SLO overview dashboard                       |
-| `infrastructure/grafana/dashboards/checkout-slo.json`         | Checkout deep-dive with error budget gauge           |
+| `terraform/grafana/dashboards/slo-overview.json`              | All-CUJ SLO overview dashboard                       |
+| `terraform/grafana/dashboards/checkout-slo.json`              | Checkout deep-dive with error budget gauge           |
+| `terraform/grafana/dashboards/checkout-breakdown.json`        | Per-service latency attribution dashboard            |
+| `terraform/grafana/dashboards/cuj-slo.json`                   | CUJ SLO burn rates and error budgets                 |
+| `terraform/main.tf`                                           | Grafana provider + Terraform entrypoint              |
+| `terraform/dashboards.tf`                                     | grafana_folder + grafana_dashboard resources         |

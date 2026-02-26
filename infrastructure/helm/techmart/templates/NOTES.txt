@@ -9,9 +9,8 @@ TechMart deployed to namespace: {{ .Release.Namespace }}
   Check pod status:
     kubectl get pods -n {{ .Release.Namespace }}
 
-  Grafana dashboards — import from infrastructure/grafana/dashboards/:
-    slo-overview.json   — all CUJs at a glance
-    checkout-slo.json   — checkout deep-dive with error budget
+  Grafana dashboards — deploy via Terraform:
+    cd terraform && terraform init && terraform apply
 
 {{- if .Values.api.otel.injectNodejs }}
 
