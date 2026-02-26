@@ -12,11 +12,12 @@ the **Critical User Journey (CUJ)** pattern and the SLO metrics it enables.
 2. [Signal Pipeline](#signal-pipeline)
 3. [Auto-Instrumentation](#auto-instrumentation)
 4. [Critical User Journeys](#critical-user-journeys)
-5. [Span Anatomy](#span-anatomy)
-6. [Collector: spanmetrics](#collector-spanmetrics)
-7. [SLO Metrics Reference](#slo-metrics-reference)
-8. [Grafana Dashboards](#grafana-dashboards)
-9. [Adding a New CUJ](#adding-a-new-cuj)
+5. [Cross-Service Propagation](#cross-service-propagation)
+6. [Span Anatomy](#span-anatomy)
+7. [Collector: spanmetrics](#collector-spanmetrics)
+8. [SLO Metrics Reference](#slo-metrics-reference)
+9. [Grafana Dashboards](#grafana-dashboards)
+10. [Adding a New CUJ](#adding-a-new-cuj)
 
 ---
 
@@ -144,36 +145,46 @@ lightweight helper in `api/src/tracing.js`.
 
 ```js
 // api/src/tracing.js
-const { trace, SpanStatusCode } = require('@opentelemetry/api');
+const { trace, context, propagation, SpanStatusCode } = require('@opentelemetry/api');
 const tracer = trace.getTracer('techmart-api', '1.0.0');
 
 async function withJourney(name, fn) {
-  // 1. Stamp cuj.name on the parent HTTP span (created by auto-instrumentation)
-  //    so the attribute is queryable at the root level.
+  // 1. Stamp cuj.name on the parent HTTP span (created by auto-instrumentation).
   const httpSpan = trace.getActiveSpan();
   if (httpSpan) {
     httpSpan.setAttribute('cuj.name', name);
     httpSpan.setAttribute('cuj.critical', true);
   }
 
-  // 2. Create a named child span that wraps the business logic.
-  //    All downstream pg spans become children of this span.
-  return tracer.startActiveSpan(`cuj.${name}`, { attributes: {
-    'cuj.name': name,
-    'cuj.critical': true,
-  }}, async (span) => {
-    try {
-      const result = await fn();
-      span.setStatus({ code: SpanStatusCode.OK });
-      return result;
-    } catch (err) {
-      span.recordException(err);
-      span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-      throw err;           // re-throw so route handler can respond
-    } finally {
-      span.end();
-    }
-  });
+  // 2. Inject W3C Baggage — SDK propagates these as a `baggage` header on every
+  //    outbound HTTP call within fn(), letting downstream services read cuj.name.
+  const currentBaggage =
+    propagation.getBaggage(context.active()) ?? propagation.createBaggage();
+  const baggageWithCuj = currentBaggage
+    .setEntry('cuj.name',     { value: name   })
+    .setEntry('cuj.critical', { value: 'true' });
+  const ctxWithBaggage = propagation.setBaggage(context.active(), baggageWithCuj);
+
+  // 3. Run everything inside a context that carries both the enriched baggage
+  //    and a named child span wrapping the critical path.
+  return context.with(ctxWithBaggage, () =>
+    tracer.startActiveSpan(`cuj.${name}`, { attributes: {
+      'cuj.name': name,
+      'cuj.critical': true,
+    }}, async (span) => {
+      try {
+        const result = await fn();
+        span.setStatus({ code: SpanStatusCode.OK });
+        return result;
+      } catch (err) {
+        span.recordException(err);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+        throw err;
+      } finally {
+        span.end();
+      }
+    })
+  );
 }
 ```
 
@@ -201,9 +212,105 @@ router.post('/', async (req, res) => {
 
 ---
 
+## Cross-Service Propagation
+
+When a CUJ spans multiple services (e.g. checkout calls an inventory service
+and a payments service), `cuj.name` needs to appear on spans in *all* of them
+so SLO dashboards and traces tell a coherent story.
+
+### How it works
+
+```
+ api (checkout)              inventory-svc               payments-svc
+ ──────────────              ─────────────               ────────────
+ withJourney('checkout')
+   │  sets W3C Baggage:
+   │  cuj.name=checkout
+   │
+   ├──▶ HTTP POST /reserve ──────────────────────────▶
+   │     headers: baggage: cuj.name=checkout, …        cujBaggageMiddleware
+   │                                                     reads baggage entry
+   │                                                     stamps cuj.name on
+   │                                                     this service's spans
+   │
+   └──▶ HTTP POST /charge ───────────────────────────────────────────▶
+         headers: baggage: cuj.name=checkout, …                    cujBaggageMiddleware
+                                                                     same stamping
+```
+
+**Key properties:**
+- The `baggage` HTTP header is injected automatically by the OTel SDK — no
+  manual header code in the originating service.
+- Auto-instrumentation extracts the `baggage` header in the receiving service
+  *before* any route handler runs, so the values are already in the active
+  context when `cujBaggageMiddleware` reads them.
+- If a downstream service also calls `withJourney()` for its own sub-journeys,
+  the baggage is already set — `setEntry` overwrites cleanly.
+
+### The `cujBaggageMiddleware`
+
+Register this in every service that participates in a CUJ but does not
+*originate* one:
+
+```js
+// In any downstream service's entry point (e.g. server.js / index.js)
+const { cujBaggageMiddleware } = require('./tracing');
+app.use(cujBaggageMiddleware);   // before routes — after body parsing
+```
+
+Implementation (already in `api/src/tracing.js` and wired into `api/src/index.js`):
+
+```js
+function cujBaggageMiddleware(req, res, next) {
+  const baggage = propagation.getBaggage(context.active());
+  if (baggage) {
+    const cujEntry = baggage.getEntry('cuj.name');
+    if (cujEntry) {
+      const span = trace.getActiveSpan();
+      if (span) {
+        span.setAttribute('cuj.name',     cujEntry.value);
+        span.setAttribute('cuj.critical', true);
+      }
+    }
+  }
+  next();
+}
+```
+
+### Propagators
+
+The `Instrumentation` CR enables both required propagators:
+
+```yaml
+# infrastructure/k8s/telemetry/instrumentation.yaml
+spec:
+  propagators:
+    - tracecontext   # W3C Trace Context  (traceparent / tracestate headers)
+    - baggage        # W3C Baggage        (baggage header — carries cuj.name)
+```
+
+`tracecontext` stitches spans from different services into one trace tree in
+Tempo. `baggage` carries the semantic `cuj.name` label through the call graph.
+
+### Result in Grafana
+
+Every span in the call chain — regardless of which service emitted it —
+carries `cuj.name`. The spanmetrics connector therefore emits
+`techmart_calls_total{cuj_name="checkout"}` for inventory and payments spans
+too, so a single PromQL query covers the **total cost** of the journey across
+all services:
+
+```promql
+# Error rate across ALL services participating in the checkout CUJ
+100 * sum(rate(techmart_calls_total{cuj_name="checkout", status_code="STATUS_CODE_ERROR"}[5m]))
+    / sum(rate(techmart_calls_total{cuj_name="checkout"}[5m]))
+```
+
+---
+
 ## Span Anatomy
 
-A successful checkout request produces this trace tree.
+A successful checkout request produces this trace tree (single-service view).
 
 ```
 POST /api/orders                              ← HTTP span (auto · http instrumentation)
@@ -224,6 +331,22 @@ POST /api/orders                              ← HTTP span (auto · http instru
     ├── pg.query:INSERT order_items           │
     ├── pg.query:UPDATE products (stock)      │
     └── pg.query:COMMIT                      ─┘
+```
+
+With cross-service propagation the same trace continues into downstream services:
+
+```
+POST /api/orders
+└── cuj.checkout  [api]                      baggage: cuj.name=checkout ──▶
+    ├── pg.query:* (stock check)
+    │
+    ├── POST /reserve  [inventory-svc]        ← new remote span, same trace
+    │   │  cuj.name = "checkout"               ← stamped by cujBaggageMiddleware
+    │   └── pg.query:UPDATE stock
+    │
+    └── POST /charge   [payments-svc]         ← another remote span
+        │  cuj.name = "checkout"               ← stamped by cujBaggageMiddleware
+        └── http.client:stripe-api
 ```
 
 A failed checkout (e.g. out of stock) looks like:
@@ -412,7 +535,7 @@ Request Volume (stacked by status)
 
 ## Adding a New CUJ
 
-Three steps to instrument any new critical path:
+### Single-service CUJ (3 steps)
 
 **1. Wrap the critical logic in `withJourney`:**
 
@@ -449,15 +572,30 @@ histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_nam
 Add a row to the SLO overview dashboard by duplicating any existing row and
 substituting the `span_name` filter.
 
+### Cross-service CUJ (1 extra step per downstream service)
+
+If the journey makes outbound calls to other services, add `cujBaggageMiddleware`
+to each of those services:
+
+```js
+// In every participating downstream service (inventory-svc, payments-svc, …)
+const { cujBaggageMiddleware } = require('./tracing');   // copy tracing.js there
+app.use(cujBaggageMiddleware);
+```
+
+No other changes are needed — `withJourney` already sets the baggage, and the
+OTel SDK already propagates it via the `baggage` HTTP header.
+
 ---
 
 ## File Reference
 
-| Path                                                          | Purpose                                              |
-|---------------------------------------------------------------|------------------------------------------------------|
-| `api/src/tracing.js`                                          | `withJourney()` helper — CUJ span wrapper            |
-| `api/src/routes/orders.js`                                    | `checkout`, `order-lookup` journeys                  |
-| `api/src/routes/products.js`                                  | `product-discovery` journey                          |
+| Path                                                          | Purpose                                                               |
+|---------------------------------------------------------------|-----------------------------------------------------------------------|
+| `api/src/tracing.js`                                          | `withJourney()` + `cujBaggageMiddleware` — CUJ helpers                |
+| `api/src/index.js`                                            | Wires `cujBaggageMiddleware` early in the Express stack               |
+| `api/src/routes/orders.js`                                    | `checkout`, `order-lookup` journeys                                   |
+| `api/src/routes/products.js`                                  | `product-discovery` journey                                           |
 | `infrastructure/k8s/telemetry/instrumentation.yaml`           | OTel Operator `Instrumentation` CR (SDK config)      |
 | `infrastructure/k8s/telemetry/collector/collector.yaml`       | Collector config incl. spanmetrics connector         |
 | `infrastructure/k8s/telemetry/collector/secret.yaml`          | Secret template (credentials never committed)        |
