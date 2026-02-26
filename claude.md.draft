@@ -1,0 +1,178 @@
+# CLAUDE.md — TechMart Observability Demo
+
+## Project Overview
+
+TechMart is a 3-tier web store (React frontend, Node.js API, PostgreSQL) running in a local **kind** Kubernetes cluster. It demonstrates end-to-end observability with OpenTelemetry, Grafana Cloud SLOs, and Jenkins CI/CD.
+
+**Stack**: React/Vite frontend → nginx reverse proxy → Express API → PostgreSQL
+**Observability**: OTel auto-instrumentation (operator) → spanmetrics connector → Grafana Cloud (Mimir + Tempo)
+**CI/CD**: Jenkins (in-cluster) → Kaniko builds → Helm deploys
+**SLOs**: Terraform-managed `grafana_slo` resources with fastburn/slowburn alerting
+
+## Architecture
+
+```
+[React Frontend :5173] → [nginx /api/ proxy] → [Express API :3001] → [PostgreSQL :5432]
+                                                        ↓
+                                              [inventory-svc :3002]
+```
+
+All services run in the `webstore` namespace. The OTel collector runs in `observability`, shipping traces to Tempo and spanmetrics to Mimir.
+
+## Critical User Journeys (CUJs)
+
+| CUJ | Route | SLO Avail | SLO Latency |
+|-----|-------|-----------|-------------|
+| `product-discovery` | `GET /api/products` | 99.9% | p99 < 1s |
+| `checkout` | `POST /api/orders` | 99.9% | p99 < 2s |
+| `order-lookup` | `GET /api/orders/:id` | 99.9% | p99 < 1s |
+| `product-search` | `GET /api/products/search` | 99.9% | p99 < 500ms |
+| `product-review` | `GET/POST /api/products/:id/reviews` | 99.9% | p99 < 1s |
+| `order-history` | `GET /api/orders?email=` | 99.9% | p99 < 1s |
+
+## Key Directories
+
+```
+api/src/                    Express API server
+  routes/products.js        product-discovery + product-search CUJs
+  routes/orders.js          checkout + order-lookup + order-history CUJs
+  routes/reviews.js         product-review CUJ
+  tracing.js                withJourney() + cujBaggageMiddleware
+  db.js                     pg Pool connection
+
+frontend/src/               React/Vite frontend
+  components/ProductGrid.jsx  Product catalog + search
+  components/ReviewSection.jsx  Reviews modal
+  components/OrderHistory.jsx   Order lookup by email
+  App.jsx                   View routing (catalog/checkout/confirmation/orders)
+
+inventory-svc/src/          Stock reservation microservice
+  index.js                  POST /reserve endpoint
+  tracing.js                cujBaggageMiddleware (downstream)
+
+database/init.sql           Canonical schema + seed data + indexes
+infrastructure/
+  helm/techmart/            Helm chart (all services + postgres + k6)
+    files/postgres-init.sql   Schema (kept in sync with database/init.sql)
+    files/k6-test.js          Load test traffic generator
+  scripts/                  Cluster lifecycle scripts
+  k8s/telemetry/            OTel collector CR
+
+terraform/
+  slos.tf                   12 grafana_slo resources (2 per CUJ)
+  dashboards.tf             Dashboard resources
+  grafana/dashboards/       JSON dashboard definitions
+    slo-overview.json       Per-CUJ success rate, latency, error rate
+    cuj-slo.json            Burn rates, error budgets, latency comparison
+
+ci/
+  build.Jenkinsfile         Parallel Kaniko builds → push to in-cluster registry
+  deploy.Jenkinsfile        Helm upgrade + kubectl rollout verification
+```
+
+## CUJ Instrumentation Pattern
+
+### Originating service (API)
+
+```javascript
+const { withJourney } = require('./tracing');
+
+router.get('/search', async (req, res) => {
+  const rows = await withJourney('product-search', async () => {
+    // DB queries, span attributes, business logic
+    const span = trace.getActiveSpan();
+    if (span) span.setAttribute('search.query', q);
+    return result.rows;
+  });
+  res.json(rows);
+});
+```
+
+`withJourney(name, fn)`:
+1. Stamps `cuj.name` on the parent HTTP span
+2. Creates child span `cuj.<name>` wrapping the critical path
+3. Injects W3C Baggage so downstream services inherit `cuj.name`
+4. Records exceptions and sets ERROR status on failure
+
+### Downstream service (inventory-svc)
+
+```javascript
+const { cujBaggageMiddleware } = require('./tracing');
+app.use(cujBaggageMiddleware);
+// Automatically stamps cuj.name from incoming baggage onto the active span
+```
+
+### Metrics derived automatically
+
+The OTel collector's spanmetrics connector generates:
+- `techmart_calls_total{span_name="cuj.<name>", status_code="..."}` — request counter
+- `techmart_duration_milliseconds_bucket{span_name="cuj.<name>", le="..."}` — latency histogram
+
+No manual metrics instrumentation needed — just use `withJourney()`.
+
+## Adding a New Feature / CUJ
+
+1. **API route**: Add route with `withJourney('cuj-name', async () => { ... })`
+2. **DB schema**: Add tables/indexes to both `database/init.sql` and `infrastructure/helm/techmart/files/postgres-init.sql`
+3. **Frontend**: Add component, wire into `App.jsx` view routing
+4. **k6 traffic**: Add traffic slice to `infrastructure/helm/techmart/files/k6-test.js`
+5. **Terraform SLOs**: Add 2 `grafana_slo` resources to `terraform/slos.tf` (ratio for availability, freeform for latency)
+6. **Dashboards**: Add row to `slo-overview.json`, panels to `cuj-slo.json`
+7. **Commit on feature branch**: `feat/<feature-name>`, push, merge to main
+
+No collector, Helm template, or Jenkinsfile changes needed — spanmetrics auto-derives metrics for any new `cuj.name` value, and Jenkins auto-builds on merge to main.
+
+## Development Workflow
+
+```bash
+# Create kind cluster + cert-manager + OTel operator + collector
+./infrastructure/scripts/setup-cluster.sh
+./infrastructure/scripts/setup-telemetry.sh
+
+# Build images, load into kind, deploy with Helm
+./infrastructure/scripts/build-and-load.sh
+./infrastructure/scripts/deploy.sh
+
+# Set up Jenkins CI/CD (optional)
+./infrastructure/scripts/setup-cicd.sh
+
+# Tear down everything
+./infrastructure/scripts/teardown.sh
+```
+
+**Feature branch workflow**: Create `feat/<name>` → implement → commit → push → merge to main → Jenkins auto-builds and deploys.
+
+**DB migration**: All DDL uses `CREATE TABLE/INDEX IF NOT EXISTS` so it's idempotent. For existing clusters, delete the postgres PVC and redeploy, or `kubectl exec` the DDL directly.
+
+## Terraform (SLOs + Dashboards)
+
+```bash
+cd terraform
+terraform init
+terraform plan     # Shows grafana_slo and grafana_dashboard resources
+terraform apply    # Creates SLOs and dashboards in Grafana Cloud
+```
+
+Each CUJ gets exactly 2 `grafana_slo` resources:
+- **Availability** (ratio): `techmart_calls_total{status_code!="STATUS_CODE_ERROR"}` / `techmart_calls_total`
+- **Latency** (freeform): fraction of requests within the target bucket (e.g., `le="1000"`)
+
+Both include `alerting {}` blocks for fastburn (14.4x) and slowburn (6x) alert rules.
+
+Dashboard panels use `"uid": "${datasource}"` template variable — never hardcoded datasource UIDs.
+
+## Key Conventions
+
+- **imagePullPolicy: Never** + `kind load docker-image` for local images
+- **In-cluster registry**: `registry.registry.svc.cluster.local:5000` (plain HTTP, containerd patched)
+- **Frontend proxy**: nginx proxies `/api/` → `http://api:3001` (avoids ingress routing race)
+- **Cache-Control: no-store** on all API responses
+- **App namespace**: `webstore`
+- **Observability namespace**: `observability`
+- **Grafana Cloud secret**: `otel-vendor-credentials` in `observability` ns (never committed)
+
+## Preferences
+
+- Full autonomy — execute everything needed without pausing for confirmation
+- Feature branches for new development, merged sequentially to main
+- Keep `database/init.sql` and `infrastructure/helm/techmart/files/postgres-init.sql` in sync
