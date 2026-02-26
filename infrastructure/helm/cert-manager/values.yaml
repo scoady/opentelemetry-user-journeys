@@ -1,0 +1,6 @@
+# cert-manager Helm values
+# Chart: jetstack/cert-manager  version: v1.19.4
+#
+# Install CRDs via the chart so they are lifecycle-managed by Helm.
+crds:
+  enabled: true

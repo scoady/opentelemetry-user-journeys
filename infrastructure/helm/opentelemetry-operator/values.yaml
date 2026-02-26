@@ -1,0 +1,17 @@
+# OpenTelemetry Operator Helm values
+# Chart: open-telemetry/opentelemetry-operator  version: 0.106.0  (app: 0.145.0)
+#
+# Use the cert-manager admission webhook (already deployed in cert-manager ns).
+admissionWebhooks:
+  certManager:
+    enabled: true
+
+# Install CRDs via the chart.
+crds:
+  create: true
+
+# We manage our own OpenTelemetryCollector CRs in infrastructure/k8s/telemetry/collector/
+# so the manager needs no additional configuration here.
+manager:
+  collectorImage:
+    repository: otel/opentelemetry-collector-contrib
