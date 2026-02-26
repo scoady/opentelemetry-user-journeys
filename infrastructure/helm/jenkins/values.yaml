@@ -175,7 +175,7 @@ controller:
                               key: "HOME"
                               value: "/home/jenkins/agent"
                       - name: "helm"
-                        image: "alpine/helm:3.16.4"
+                        image: "dtzar/helm-kubectl:3.16.4"
                         alwaysPullImage: false
                         command: "cat"
                         args: ""
