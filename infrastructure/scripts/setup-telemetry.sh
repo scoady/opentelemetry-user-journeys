@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # setup-telemetry.sh — Install cert-manager, the OpenTelemetry Operator,
-#                      and deploy the telemetry pipeline (collector + Jaeger).
+#                      and deploy the OTel Collector.
+#
+# Before running, fill in your vendor credentials:
+#   infrastructure/k8s/telemetry/collector/secret.yaml
 #
 # Run once after setup-cluster.sh. Safe to re-run — all steps are idempotent.
 set -euo pipefail
@@ -35,17 +38,10 @@ kubectl wait --for=condition=ready pod \
   -n opentelemetry-operator-system \
   --timeout=180s
 
-# ── 3. Observability namespace + Jaeger ───────────────────────────────────────
+# ── 3. Collector ──────────────────────────────────────────────────────────────
 echo ""
-echo ">>> Deploying telemetry stack…"
+echo ">>> Deploying OpenTelemetry Collector…"
 kubectl apply -f "${K8S_TELEMETRY}/namespace.yaml"
-
-echo "  Deploying Jaeger…"
-kubectl apply -f "${K8S_TELEMETRY}/jaeger/"
-kubectl rollout status deployment/jaeger -n observability --timeout=120s
-
-# ── 4. OpenTelemetry Collector ────────────────────────────────────────────────
-echo "  Deploying OpenTelemetry Collector…"
 kubectl apply -f "${K8S_TELEMETRY}/collector/"
 
 echo "  Waiting for collector to be ready…"
@@ -53,14 +49,20 @@ kubectl wait --for=condition=available deployment/otel-collector \
   -n observability \
   --timeout=120s
 
-# ── 5. Summary ────────────────────────────────────────────────────────────────
+# ── 4. Summary ────────────────────────────────────────────────────────────────
 echo ""
-echo "✓ Telemetry pipeline ready!"
-echo ""
-echo "  Jaeger UI:    http://localhost/jaeger"
+echo "✓ OTel Collector ready!"
 echo ""
 echo "  Collector endpoints (reachable from any pod in the cluster):"
 echo "    OTLP gRPC:  otel-collector.observability.svc.cluster.local:4317"
 echo "    OTLP HTTP:  otel-collector.observability.svc.cluster.local:4318"
+echo ""
+echo "  To enable vendor export:"
+echo "    1. Set OTLP_ENDPOINT and OTLP_AUTH_HEADER in:"
+echo "         infrastructure/k8s/telemetry/collector/secret.yaml"
+echo "    2. Uncomment the vendor exporters in:"
+echo "         infrastructure/k8s/telemetry/collector/collector.yaml"
+echo "    3. kubectl apply -f infrastructure/k8s/telemetry/collector/"
+echo "       kubectl rollout restart deployment/otel-collector -n observability"
 echo ""
 kubectl get pods -n observability

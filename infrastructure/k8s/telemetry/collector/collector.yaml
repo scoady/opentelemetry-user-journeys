@@ -12,6 +12,19 @@ spec:
     limits:
       memory: "256Mi"
       cpu: "250m"
+
+  # GRAFANA_AUTH comes from the otel-vendor-credentials secret.
+  # Value is base64(instanceId:apiKey) — never committed to git.
+  # To populate: printf '<instanceId>:<apiKey>' | base64
+  # Then: kubectl create secret generic otel-vendor-credentials \
+  #         -n observability --from-literal=GRAFANA_AUTH=<value>
+  env:
+    - name: GRAFANA_AUTH
+      valueFrom:
+        secretKeyRef:
+          name: otel-vendor-credentials
+          key: GRAFANA_AUTH
+
   config:
     receivers:
       otlp:
@@ -27,27 +40,27 @@ spec:
         send_batch_size: 1024
 
     exporters:
-      # Log all telemetry to collector stdout — useful for development
+      # Log a summary to collector stdout — useful for verifying instrumentation.
       debug:
         verbosity: normal
 
-      # Forward traces to Jaeger via OTLP gRPC
-      otlp/jaeger:
-        endpoint: jaeger.observability.svc.cluster.local:4317
-        tls:
-          insecure: true
+      # Grafana Cloud OTLP gateway (prod-us-east-0)
+      otlp_http/grafana:
+        endpoint: https://otlp-gateway-prod-us-east-0.grafana.net/otlp
+        headers:
+          authorization: "Basic ${env:GRAFANA_AUTH}"
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
           processors: [batch]
-          exporters: [debug, otlp/jaeger]
+          exporters: [debug, otlp_http/grafana]
         metrics:
           receivers: [otlp]
           processors: [batch]
-          exporters: [debug]
+          exporters: [debug, otlp_http/grafana]
         logs:
           receivers: [otlp]
           processors: [batch]
-          exporters: [debug]
+          exporters: [debug, otlp_http/grafana]
