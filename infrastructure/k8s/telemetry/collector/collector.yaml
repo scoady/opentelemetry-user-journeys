@@ -7,11 +7,11 @@ spec:
   mode: deployment
   resources:
     requests:
-      memory: "64Mi"
-      cpu: "50m"
+      memory: "128Mi"
+      cpu: "100m"
     limits:
-      memory: "256Mi"
-      cpu: "250m"
+      memory: "512Mi"
+      cpu: "500m"
 
   # Credentials come from the otel-vendor-credentials secret (never committed).
   # To populate:
@@ -33,7 +33,6 @@ spec:
 
   config:
     extensions:
-      # basicauth extension handles Grafana Cloud's Basic auth correctly.
       basicauth/grafana:
         client_auth:
           username: "${env:GRAFANA_INSTANCE_ID}"
@@ -47,17 +46,35 @@ spec:
           http:
             endpoint: 0.0.0.0:4318
 
+    # The spanmetrics connector sits between the traces and metrics pipelines.
+    # It derives RED metrics (rate, errors, duration) from every span, with
+    # cuj.name as a first-class dimension so dashboards can filter by journey.
+    #
+    # Generated metric names (in Prometheus after OTLP ingestion):
+    #   techmart_calls_total{span_name, service_name, status_code, cuj_name, ...}
+    #   techmart_duration_milliseconds_bucket{...}   (+ _count, _sum)
+    connectors:
+      spanmetrics:
+        namespace: techmart
+        histogram:
+          explicit:
+            buckets: [10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2s, 5s, 10s]
+        dimensions:
+          - name: cuj.name
+          - name: http.route
+          - name: http.request.method
+          - name: http.response.status_code
+        metrics_flush_interval: 60s
+
     processors:
       batch:
         timeout: 1s
         send_batch_size: 1024
 
     exporters:
-      # Log a summary to collector stdout — useful for verifying instrumentation.
       debug:
         verbosity: normal
 
-      # Grafana Cloud OTLP gateway (prod-us-east-0)
       otlp_http/grafana:
         endpoint: https://otlp-gateway-prod-us-east-0.grafana.net/otlp
         auth:
@@ -69,9 +86,11 @@ spec:
         traces:
           receivers: [otlp]
           processors: [batch]
-          exporters: [debug, otlp_http/grafana]
+          # spanmetrics is a connector — it appears as an exporter here and
+          # as a receiver in the metrics pipeline below.
+          exporters: [debug, otlp_http/grafana, spanmetrics]
         metrics:
-          receivers: [otlp]
+          receivers: [otlp, spanmetrics]
           processors: [batch]
           exporters: [debug, otlp_http/grafana]
         logs:
