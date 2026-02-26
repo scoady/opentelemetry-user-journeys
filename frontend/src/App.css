@@ -56,6 +56,29 @@ body {
   text-decoration: none;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.nav-btn {
+  background: none;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.nav-btn:hover {
+  background: var(--gray-100);
+  border-color: var(--gray-400);
+}
+
 .cart-btn {
   position: relative;
   background: var(--primary);
@@ -679,3 +702,62 @@ body {
 .star-empty { color: var(--gray-200); }
 .star-interactive { cursor: pointer; }
 .star-interactive:hover { color: #f59e0b; }
+
+/* ── Order History ── */
+.order-history-wrap {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.order-history-form {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.order-history-count {
+  font-size: 0.9rem;
+  color: var(--gray-600);
+  margin-bottom: 1rem;
+}
+
+.order-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.order-history-card {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.25rem;
+}
+
+.order-history-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.order-status {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.order-status-confirmed { background: #dcfce7; color: #15803d; }
+.order-status-pending { background: #fef9c3; color: #a16207; }
+
+.order-history-details p { font-size: 0.9rem; color: var(--gray-600); }
+.order-history-details p:first-child { color: var(--gray-800); }
+
+.order-history-date {
+  font-size: 0.8rem;
+  color: var(--gray-400);
+  margin-top: 0.25rem;
+}

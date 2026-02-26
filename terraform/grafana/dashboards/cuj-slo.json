@@ -17,9 +17,9 @@
     { "type": "panel",      "id": "timeseries", "name": "Time series", "version": ""       }
   ],
   "title": "TechMart — CUJ SLO Dashboard",
-  "description": "Burn rates, error budgets, and SLO health for all Critical User Journeys. Burn rate = (actual error rate) / (budget error rate). Fast burn >14.4x exhausts the monthly budget in ~2 days.",
+  "description": "Burn rates, error budgets, and SLO health for all Critical User Journeys (checkout, product-discovery, order-lookup, product-search, product-review, order-history). Burn rate = (actual error rate) / (budget error rate). Fast burn >14.4x exhausts the monthly budget in ~2 days.",
   "uid": "techmart-cuj-slo",
-  "version": 3,
+  "version": 4,
   "schemaVersion": 38,
   "tags": ["slo", "techmart", "cuj", "burn-rate", "error-budget"],
   "time": { "from": "now-24h", "to": "now" },
@@ -103,6 +103,15 @@
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
       "fieldConfig": { "defaults": { "unit": "short", "decimals": 2, "min": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "orange", "value": 6 }, { "color": "red", "value": 14.4 }] } } }
     },
+    {
+      "type": "stat", "id": 50,
+      "title": "order-history — 1h",
+      "gridPos": { "x": 20, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.order-history\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(techmart_calls_total{span_name=\"cuj.order-history\"}[1h])) / 0.001", "legendFormat": "" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 2, "min": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "orange", "value": 6 }, { "color": "red", "value": 14.4 }] } } }
+    },
 
     { "type": "row", "title": "Burn Rate — 6h window", "id": 101,
       "collapsed": false, "gridPos": { "x": 0, "y": 5, "w": 24, "h": 1 } },
@@ -152,6 +161,15 @@
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
       "fieldConfig": { "defaults": { "unit": "short", "decimals": 2, "min": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "orange", "value": 6 }, { "color": "red", "value": 14.4 }] } } }
     },
+    {
+      "type": "stat", "id": 51,
+      "title": "order-history — 6h",
+      "gridPos": { "x": 20, "y": 6, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.order-history\", status_code=\"STATUS_CODE_ERROR\"}[6h])) / sum(rate(techmart_calls_total{span_name=\"cuj.order-history\"}[6h])) / 0.001", "legendFormat": "" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 2, "min": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "orange", "value": 6 }, { "color": "red", "value": 14.4 }] } } }
+    },
 
     { "type": "row", "title": "Success Rate", "id": 102,
       "collapsed": false, "gridPos": { "x": 0, "y": 10, "w": 24, "h": 1 } },
@@ -194,6 +212,15 @@
       "gridPos": { "x": 16, "y": 11, "w": 4, "h": 4 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{ "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.product-review\", status_code!=\"STATUS_CODE_ERROR\"}[$window])) / sum(increase(techmart_calls_total{span_name=\"cuj.product-review\"}[$window]))", "legendFormat": "" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" },
+      "fieldConfig": { "defaults": { "unit": "percent", "decimals": 3, "min": 99, "max": 100, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99.5 }, { "color": "green", "value": 99.9 }] } } }
+    },
+    {
+      "type": "stat", "id": 52, "title": "order-history",
+      "description": "% of cuj.order-history spans that succeeded. SLO: 99.9%.",
+      "gridPos": { "x": 20, "y": 11, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.order-history\", status_code!=\"STATUS_CODE_ERROR\"}[$window])) / sum(increase(techmart_calls_total{span_name=\"cuj.order-history\"}[$window]))", "legendFormat": "" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" },
       "fieldConfig": { "defaults": { "unit": "percent", "decimals": 3, "min": 99, "max": 100, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99.5 }, { "color": "green", "value": 99.9 }] } } }
     },
@@ -242,6 +269,15 @@
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "showThresholdLabels": false, "showThresholdMarkers": true, "minVizHeight": 75 },
       "fieldConfig": { "defaults": { "unit": "percent", "decimals": 1, "min": 0, "max": 100, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 25 }, { "color": "green", "value": 50 }] } } }
     },
+    {
+      "type": "gauge", "id": 53, "title": "order-history",
+      "description": "Error budget remaining for order-history. Budget = 0.1% of spans allowed to fail over 30 days.",
+      "gridPos": { "x": 20, "y": 16, "w": 4, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "expr": "100 * (1 - (sum(increase(techmart_calls_total{span_name=\"cuj.order-history\", status_code=\"STATUS_CODE_ERROR\"}[30d])) / sum(increase(techmart_calls_total{span_name=\"cuj.order-history\"}[30d]))) / 0.001)", "legendFormat": "" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "showThresholdLabels": false, "showThresholdMarkers": true, "minVizHeight": 75 },
+      "fieldConfig": { "defaults": { "unit": "percent", "decimals": 1, "min": 0, "max": 100, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 25 }, { "color": "green", "value": 50 }] } } }
+    },
 
     { "type": "row", "title": "p99 Latency", "id": 104,
       "collapsed": false, "gridPos": { "x": 0, "y": 22, "w": 24, "h": 1 } },
@@ -286,6 +322,14 @@
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" },
       "fieldConfig": { "defaults": { "unit": "ms", "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 500 }, { "color": "red", "value": 1000 }] } } }
     },
+    {
+      "type": "stat", "id": 54, "title": "order-history (SLO < 1s)",
+      "gridPos": { "x": 20, "y": 23, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.order-history\"}[5m])) by (le))", "legendFormat": "" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" },
+      "fieldConfig": { "defaults": { "unit": "ms", "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 500 }, { "color": "red", "value": 1000 }] } } }
+    },
 
     {
       "type": "timeseries", "id": 20,
@@ -299,6 +343,7 @@
         { "expr": "100 * sum(rate(techmart_calls_total{span_name=\"cuj.order-lookup\", status_code!=\"STATUS_CODE_ERROR\"}[5m])) / sum(rate(techmart_calls_total{span_name=\"cuj.order-lookup\"}[5m]))", "legendFormat": "order-lookup" },
         { "expr": "100 * sum(rate(techmart_calls_total{span_name=\"cuj.product-search\", status_code!=\"STATUS_CODE_ERROR\"}[5m])) / sum(rate(techmart_calls_total{span_name=\"cuj.product-search\"}[5m]))", "legendFormat": "product-search" },
         { "expr": "100 * sum(rate(techmart_calls_total{span_name=\"cuj.product-review\", status_code!=\"STATUS_CODE_ERROR\"}[5m])) / sum(rate(techmart_calls_total{span_name=\"cuj.product-review\"}[5m]))", "legendFormat": "product-review" },
+        { "expr": "100 * sum(rate(techmart_calls_total{span_name=\"cuj.order-history\", status_code!=\"STATUS_CODE_ERROR\"}[5m])) / sum(rate(techmart_calls_total{span_name=\"cuj.order-history\"}[5m]))", "legendFormat": "order-history" },
         { "expr": "vector(99.9)", "legendFormat": "SLO target (99.9%)" }
       ],
       "fieldConfig": {
@@ -309,6 +354,7 @@
           { "matcher": { "id": "byName", "options": "order-lookup" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "purple" } }] },
           { "matcher": { "id": "byName", "options": "product-search" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] },
           { "matcher": { "id": "byName", "options": "product-review" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "order-history" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "cyan" } }] },
           { "matcher": { "id": "byName", "options": "SLO target (99.9%)" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }, { "id": "custom.lineStyle", "value": { "fill": "dash" } }, { "id": "custom.fillOpacity", "value": 0 }, { "id": "custom.lineWidth", "value": 1 }] }
         ]
       },
@@ -327,6 +373,7 @@
         { "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.order-lookup\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(techmart_calls_total{span_name=\"cuj.order-lookup\"}[1h])) / 0.001", "legendFormat": "order-lookup" },
         { "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.product-search\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(techmart_calls_total{span_name=\"cuj.product-search\"}[1h])) / 0.001", "legendFormat": "product-search" },
         { "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.product-review\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(techmart_calls_total{span_name=\"cuj.product-review\"}[1h])) / 0.001", "legendFormat": "product-review" },
+        { "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.order-history\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(techmart_calls_total{span_name=\"cuj.order-history\"}[1h])) / 0.001", "legendFormat": "order-history" },
         { "expr": "vector(14.4)", "legendFormat": "fast burn (14.4x)" },
         { "expr": "vector(6)", "legendFormat": "slow burn (6x)" }
       ],
@@ -338,6 +385,7 @@
           { "matcher": { "id": "byName", "options": "order-lookup" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "purple" } }] },
           { "matcher": { "id": "byName", "options": "product-search" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] },
           { "matcher": { "id": "byName", "options": "product-review" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "order-history" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "cyan" } }] },
           { "matcher": { "id": "byName", "options": "fast burn (14.4x)" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }, { "id": "custom.lineStyle", "value": { "fill": "dash" } }, { "id": "custom.fillOpacity", "value": 0 }, { "id": "custom.lineWidth", "value": 1 }] },
           { "matcher": { "id": "byName", "options": "slow burn (6x)" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }, { "id": "custom.lineStyle", "value": { "fill": "dash" } }, { "id": "custom.fillOpacity", "value": 0 }, { "id": "custom.lineWidth", "value": 1 }] }
         ]
@@ -357,6 +405,7 @@
         { "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.order-lookup\", status_code=\"STATUS_CODE_ERROR\"}[6h])) / sum(rate(techmart_calls_total{span_name=\"cuj.order-lookup\"}[6h])) / 0.001", "legendFormat": "order-lookup" },
         { "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.product-search\", status_code=\"STATUS_CODE_ERROR\"}[6h])) / sum(rate(techmart_calls_total{span_name=\"cuj.product-search\"}[6h])) / 0.001", "legendFormat": "product-search" },
         { "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.product-review\", status_code=\"STATUS_CODE_ERROR\"}[6h])) / sum(rate(techmart_calls_total{span_name=\"cuj.product-review\"}[6h])) / 0.001", "legendFormat": "product-review" },
+        { "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.order-history\", status_code=\"STATUS_CODE_ERROR\"}[6h])) / sum(rate(techmart_calls_total{span_name=\"cuj.order-history\"}[6h])) / 0.001", "legendFormat": "order-history" },
         { "expr": "vector(14.4)", "legendFormat": "fast burn (14.4x)" },
         { "expr": "vector(6)", "legendFormat": "slow burn (6x)" }
       ],
@@ -368,6 +417,7 @@
           { "matcher": { "id": "byName", "options": "order-lookup" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "purple" } }] },
           { "matcher": { "id": "byName", "options": "product-search" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] },
           { "matcher": { "id": "byName", "options": "product-review" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "order-history" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "cyan" } }] },
           { "matcher": { "id": "byName", "options": "fast burn (14.4x)" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }, { "id": "custom.lineStyle", "value": { "fill": "dash" } }, { "id": "custom.fillOpacity", "value": 0 }, { "id": "custom.lineWidth", "value": 1 }] },
           { "matcher": { "id": "byName", "options": "slow burn (6x)" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }, { "id": "custom.lineStyle", "value": { "fill": "dash" } }, { "id": "custom.fillOpacity", "value": 0 }, { "id": "custom.lineWidth", "value": 1 }] }
         ]
@@ -387,8 +437,9 @@
         { "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.order-lookup\"}[5m])) by (le))", "legendFormat": "order-lookup" },
         { "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-search\"}[5m])) by (le))", "legendFormat": "product-search" },
         { "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-review\"}[5m])) by (le))", "legendFormat": "product-review" },
+        { "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.order-history\"}[5m])) by (le))", "legendFormat": "order-history" },
         { "expr": "vector(2000)", "legendFormat": "checkout SLO (2 s)" },
-        { "expr": "vector(1000)", "legendFormat": "browse / lookup / review SLO (1 s)" },
+        { "expr": "vector(1000)", "legendFormat": "browse / lookup / review / history SLO (1 s)" },
         { "expr": "vector(500)", "legendFormat": "search SLO (500 ms)" }
       ],
       "fieldConfig": {
@@ -399,8 +450,9 @@
           { "matcher": { "id": "byName", "options": "order-lookup" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "purple" } }] },
           { "matcher": { "id": "byName", "options": "product-search" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] },
           { "matcher": { "id": "byName", "options": "product-review" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "order-history" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "cyan" } }] },
           { "matcher": { "id": "byName", "options": "checkout SLO (2 s)" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }, { "id": "custom.lineStyle", "value": { "fill": "dash" } }, { "id": "custom.fillOpacity", "value": 0 }, { "id": "custom.lineWidth", "value": 1 }] },
-          { "matcher": { "id": "byName", "options": "browse / lookup / review SLO (1 s)" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }, { "id": "custom.lineStyle", "value": { "fill": "dash" } }, { "id": "custom.fillOpacity", "value": 0 }, { "id": "custom.lineWidth", "value": 1 }] },
+          { "matcher": { "id": "byName", "options": "browse / lookup / review / history SLO (1 s)" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }, { "id": "custom.lineStyle", "value": { "fill": "dash" } }, { "id": "custom.fillOpacity", "value": 0 }, { "id": "custom.lineWidth", "value": 1 }] },
           { "matcher": { "id": "byName", "options": "search SLO (500 ms)" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "dark-yellow" } }, { "id": "custom.lineStyle", "value": { "fill": "dash" } }, { "id": "custom.fillOpacity", "value": 0 }, { "id": "custom.lineWidth", "value": 1 }] }
         ]
       },

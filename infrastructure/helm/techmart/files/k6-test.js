@@ -34,6 +34,15 @@ let recentOrderIds = [];
 export default function () {
   const roll = Math.random();
 
+  // Final traffic distribution (7 CUJ slices across 6 CUJs):
+  //   product-discovery  50%  [0.00–0.50)
+  //   checkout           15%  [0.50–0.65)
+  //   order-lookup       10%  [0.65–0.75)
+  //   product-search     10%  [0.75–0.85)
+  //   product-review(r)   7%  [0.85–0.92)
+  //   product-review(w)   3%  [0.92–0.95)
+  //   order-history       5%  [0.95–1.00)
+
   if (roll < 0.50) {
     // 50% — browse products  (cuj.product-discovery)
     const r = http.get(`${BASE_URL}/api/products`);
@@ -85,8 +94,8 @@ export default function () {
     const r = http.get(`${BASE_URL}/api/products/${pid}/reviews`);
     check(r, { '200': (r) => r.status === 200 });
 
-  } else {
-    // 8% — write a review  (cuj.product-review)
+  } else if (roll < 0.95) {
+    // 3% — write a review  (cuj.product-review)
     const pid  = pick(PRODUCT_IDS);
     const name = pick(NAMES);
     const r = http.post(
@@ -99,5 +108,12 @@ export default function () {
       { headers: { 'Content-Type': 'application/json' } }
     );
     check(r, { '201': (r) => r.status === 201 });
+
+  } else {
+    // 5% — order history lookup  (cuj.order-history)
+    const name  = pick(NAMES);
+    const email = `${name.toLowerCase()}@${pick(DOMAINS)}`;
+    const r = http.get(`${BASE_URL}/api/orders?email=${encodeURIComponent(email)}`);
+    check(r, { '200': (r) => r.status === 200 });
   }
 }

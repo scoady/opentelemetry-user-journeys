@@ -4,8 +4,9 @@ import ProductGrid from './components/ProductGrid';
 import Cart from './components/Cart';
 import CheckoutForm from './components/CheckoutForm';
 import OrderConfirmation from './components/OrderConfirmation';
+import OrderHistory from './components/OrderHistory';
 
-// Views: 'catalog' | 'checkout' | 'confirmation'
+// Views: 'catalog' | 'checkout' | 'confirmation' | 'orders'
 export default function App() {
   const [view, setView] = useState('catalog');
   const [cart, setCart] = useState([]);
@@ -54,6 +55,7 @@ export default function App() {
         cartCount={cartCount}
         onCartOpen={() => setCartOpen(true)}
         onLogoClick={handleContinueShopping}
+        onOrderHistory={() => setView('orders')}
       />
 
       <main className="main">
@@ -72,6 +74,9 @@ export default function App() {
             order={completedOrder}
             onContinue={handleContinueShopping}
           />
+        )}
+        {view === 'orders' && (
+          <OrderHistory onBack={handleContinueShopping} />
         )}
       </main>
 

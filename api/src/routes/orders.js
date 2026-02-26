@@ -2,6 +2,7 @@ const http = require('http');
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { trace } = require('@opentelemetry/api');
 const { withJourney } = require('../tracing');
 
 const INVENTORY_URL = process.env.INVENTORY_URL || 'http://inventory-svc:3002';
@@ -41,6 +42,44 @@ function reserveInventory(items) {
     req.end();
   });
 }
+
+// GET /api/orders?email=...                             CUJ: order-history
+router.get('/', async (req, res) => {
+  try {
+    const rows = await withJourney('order-history', async () => {
+      const { email } = req.query;
+      if (!email) {
+        const err = new Error('Email query parameter is required');
+        err.status = 400;
+        throw err;
+      }
+
+      const result = await db.query(
+        `SELECT o.id, o.customer_name, o.customer_email, o.total, o.status, o.created_at,
+                COUNT(oi.id) as item_count
+         FROM orders o
+         LEFT JOIN order_items oi ON oi.order_id = o.id
+         WHERE o.customer_email = $1
+         GROUP BY o.id
+         ORDER BY o.created_at DESC`,
+        [email]
+      );
+
+      const span = trace.getActiveSpan();
+      if (span) {
+        span.setAttribute('order_history.email', email);
+        span.setAttribute('order_history.results_count', result.rows.length);
+      }
+
+      return result.rows;
+    });
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching order history:', err);
+    const status = err.status || 500;
+    res.status(status).json({ error: err.message || 'Failed to fetch order history' });
+  }
+});
 
 // POST /api/orders                                     CUJ: checkout
 router.post('/', async (req, res) => {

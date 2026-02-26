@@ -95,3 +95,6 @@ INSERT INTO reviews (product_id, rating, reviewer_name, comment) VALUES
     (6, 5, 'Bob', 'Crystal clear picture. The ring light is a nice touch for calls.'),
     (7, 4, 'Carlos', 'Vertical design took some getting used to but my wrist pain is gone.'),
     (8, 5, 'Diana', 'Sturdy and portable. Use it every day with my MacBook.');
+
+-- Order history index
+CREATE INDEX IF NOT EXISTS idx_orders_customer_email ON orders(customer_email);
