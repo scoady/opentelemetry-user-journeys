@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import ReviewSection from './ReviewSection';
 
 const CATEGORIES = ['All', 'Audio', 'Wearables', 'Accessories', 'Peripherals'];
 
@@ -25,6 +26,7 @@ export default function ProductGrid({ onAddToCart }) {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [category, setCategory] = useState('All');
+  const [reviewProduct, setReviewProduct] = useState(null);
   const debounceRef = useRef(null);
 
   const load = useCallback(() => {
@@ -102,15 +104,23 @@ export default function ProductGrid({ onAddToCart }) {
       ) : (
         <div className="product-grid">
           {products.map(product => (
-            <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
+            <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} onReview={setReviewProduct} />
           ))}
         </div>
+      )}
+
+      {reviewProduct && (
+        <ReviewSection
+          productId={reviewProduct.id}
+          productName={reviewProduct.name}
+          onClose={() => setReviewProduct(null)}
+        />
       )}
     </div>
   );
 }
 
-function ProductCard({ product, onAddToCart }) {
+function ProductCard({ product, onAddToCart, onReview }) {
   const [added, setAdded] = useState(false);
 
   const handleAdd = () => {
@@ -128,13 +138,16 @@ function ProductCard({ product, onAddToCart }) {
         <p className="product-desc">{product.description}</p>
         <div className="product-footer">
           <span className="product-price">${parseFloat(product.price).toFixed(2)}</span>
-          <button
-            className="add-btn"
-            onClick={handleAdd}
-            disabled={product.stock === 0}
-          >
-            {product.stock === 0 ? 'Out of Stock' : added ? '✓ Added' : 'Add to Cart'}
-          </button>
+          <div className="product-actions">
+            <button className="review-btn" onClick={() => onReview(product)}>Reviews</button>
+            <button
+              className="add-btn"
+              onClick={handleAdd}
+              disabled={product.stock === 0}
+            >
+              {product.stock === 0 ? 'Out of Stock' : added ? '✓ Added' : 'Add to Cart'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

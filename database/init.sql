@@ -70,3 +70,28 @@ CREATE INDEX idx_order_items_product_id ON order_items(product_id);
 -- Product search indexes
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 CREATE INDEX IF NOT EXISTS idx_products_name_lower ON products(LOWER(name));
+
+-- Reviews table
+CREATE TABLE IF NOT EXISTS reviews (
+    id SERIAL PRIMARY KEY,
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    reviewer_name VARCHAR(255) NOT NULL,
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON reviews(product_id);
+
+-- Seed reviews
+INSERT INTO reviews (product_id, rating, reviewer_name, comment) VALUES
+    (1, 5, 'Alice', 'Best headphones I have ever owned. Noise cancellation is incredible.'),
+    (1, 4, 'Bob', 'Great sound quality but a little tight on larger heads.'),
+    (2, 5, 'Carlos', 'Battery lasts forever and the fitness tracking is spot on.'),
+    (2, 3, 'Diana', 'Good watch but the app could use some work.'),
+    (3, 4, 'Eve', 'Impressive bass for such a small speaker. Love the waterproofing.'),
+    (5, 5, 'Frank', 'Cherry MX Reds are buttery smooth. Build quality is top notch.'),
+    (5, 4, 'Alice', 'Great keyboard, wish it had a numpad option though.'),
+    (6, 5, 'Bob', 'Crystal clear picture. The ring light is a nice touch for calls.'),
+    (7, 4, 'Carlos', 'Vertical design took some getting used to but my wrist pain is gone.'),
+    (8, 5, 'Diana', 'Sturdy and portable. Use it every day with my MacBook.');

@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # TechMart Grafana SLOs
 #
-# 8 SLOs — availability + latency for each Critical User Journey:
+# 10 SLOs — availability + latency for each Critical User Journey:
 #
 #   CUJ                  Availability SLO   Latency SLO
 #   ─────────────────    ────────────────   ──────────────────
@@ -9,6 +9,7 @@
 #   product-discovery    99.9 % success     p99 < 1 s   (le="1000" bucket)
 #   order-lookup         99.9 % success     p99 < 1 s   (le="1000" bucket)
 #   product-search       99.9 % success     p99 < 500ms (le="500" bucket)
+#   product-review       99.9 % success     p99 < 1 s   (le="1000" bucket)
 #
 # Availability uses the native "ratio" query type (good/total counters).
 # Latency uses "freeform" with a histogram bucket fraction — the spanmetrics
@@ -529,6 +530,133 @@ resource "grafana_slo" "product_search_latency" {
       annotation {
         key   = "description"
         value = "Product search p99 latency SLO burning >6× rate. Review search query performance and products table indexes."
+      }
+    }
+  }
+}
+
+# ── Product Review ────────────────────────────────────────────────────────────
+
+resource "grafana_slo" "product_review_availability" {
+  name        = "Product Review — Availability"
+  description = "99.9 % of cuj.product-review spans must succeed. Covers GET and POST /api/products/:id/reviews."
+  folder_uid  = grafana_folder.techmart.uid
+
+  destination_datasource {
+    uid = local.prom_uid
+  }
+
+  query {
+    type = "ratio"
+    ratio {
+      success_metric = "techmart_calls_total{span_name=\"cuj.product-review\", status_code!=\"STATUS_CODE_ERROR\"}"
+      total_metric   = "techmart_calls_total{span_name=\"cuj.product-review\"}"
+    }
+  }
+
+  objectives {
+    value  = 0.999
+    window = "30d"
+  }
+
+  label {
+    key   = "cuj"
+    value = "product-review"
+  }
+  label {
+    key   = "slo_type"
+    value = "availability"
+  }
+
+  alerting {
+    fastburn {
+      label {
+        key   = "severity"
+        value = "critical"
+      }
+      annotation {
+        key   = "name"
+        value = "Product Review Availability — Fast Burn"
+      }
+      annotation {
+        key   = "description"
+        value = "Product review error budget burning >14.4× rate. Customers cannot read or write reviews."
+      }
+    }
+    slowburn {
+      label {
+        key   = "severity"
+        value = "warning"
+      }
+      annotation {
+        key   = "name"
+        value = "Product Review Availability — Slow Burn"
+      }
+      annotation {
+        key   = "description"
+        value = "Product review error budget burning >6× rate. Investigate reviews table query errors."
+      }
+    }
+  }
+}
+
+resource "grafana_slo" "product_review_latency" {
+  name        = "Product Review — Latency p99 < 1 s"
+  description = "99.9 % of cuj.product-review requests must complete within 1000 ms. Measured via the le=1000 histogram bucket."
+  folder_uid  = grafana_folder.techmart.uid
+
+  destination_datasource {
+    uid = local.prom_uid
+  }
+
+  query {
+    type = "freeform"
+    freeform {
+      query = "sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-review\", le=\"1000\"}[$__rate_interval])) / sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-review\", le=\"+Inf\"}[$__rate_interval]))"
+    }
+  }
+
+  objectives {
+    value  = 0.999
+    window = "30d"
+  }
+
+  label {
+    key   = "cuj"
+    value = "product-review"
+  }
+  label {
+    key   = "slo_type"
+    value = "latency"
+  }
+
+  alerting {
+    fastburn {
+      label {
+        key   = "severity"
+        value = "critical"
+      }
+      annotation {
+        key   = "name"
+        value = "Product Review Latency — Fast Burn"
+      }
+      annotation {
+        key   = "description"
+        value = "Product review p99 latency SLO burning >14.4× rate. More than 0.1 % of review requests exceeding 1 s."
+      }
+    }
+    slowburn {
+      label {
+        key   = "severity"
+        value = "warning"
+      }
+      annotation {
+        key   = "name"
+        value = "Product Review Latency — Slow Burn"
+      }
+      annotation {
+        key   = "description"
+        value = "Product review p99 latency SLO burning >6× rate. Check reviews table index and JOIN performance."
       }
     }
   }

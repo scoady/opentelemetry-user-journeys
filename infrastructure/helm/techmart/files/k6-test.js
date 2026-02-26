@@ -34,13 +34,13 @@ let recentOrderIds = [];
 export default function () {
   const roll = Math.random();
 
-  if (roll < 0.55) {
-    // 55% — browse products  (cuj.product-discovery)
+  if (roll < 0.50) {
+    // 50% — browse products  (cuj.product-discovery)
     const r = http.get(`${BASE_URL}/api/products`);
     check(r, { '200': (r) => r.status === 200 });
 
-  } else if (roll < 0.73) {
-    // 18% — place an order  (cuj.checkout)
+  } else if (roll < 0.65) {
+    // 15% — place an order  (cuj.checkout)
     const name = pick(NAMES);
     const r = http.post(
       `${BASE_URL}/api/orders`,
@@ -61,8 +61,8 @@ export default function () {
       }
     }
 
-  } else if (roll < 0.85) {
-    // 12% — look up a recent order  (cuj.order-lookup)
+  } else if (roll < 0.75) {
+    // 10% — look up a recent order  (cuj.order-lookup)
     if (recentOrderIds.length === 0) {
       const r = http.get(`${BASE_URL}/api/products`);
       check(r, { '200': (r) => r.status === 200 });
@@ -72,11 +72,32 @@ export default function () {
     const r  = http.get(`${BASE_URL}/api/orders/${id}`);
     check(r, { '200': (r) => r.status === 200 });
 
-  } else {
-    // 15% — search products  (cuj.product-search)
+  } else if (roll < 0.85) {
+    // 10% — search products  (cuj.product-search)
     const term = pick(SEARCH_TERMS);
     const cat  = Math.random() < 0.3 ? `&category=${pick(CATEGORIES)}` : '';
     const r = http.get(`${BASE_URL}/api/products/search?q=${term}${cat}`);
     check(r, { '200': (r) => r.status === 200 });
+
+  } else if (roll < 0.92) {
+    // 7% — read reviews  (cuj.product-review)
+    const pid = pick(PRODUCT_IDS);
+    const r = http.get(`${BASE_URL}/api/products/${pid}/reviews`);
+    check(r, { '200': (r) => r.status === 200 });
+
+  } else {
+    // 8% — write a review  (cuj.product-review)
+    const pid  = pick(PRODUCT_IDS);
+    const name = pick(NAMES);
+    const r = http.post(
+      `${BASE_URL}/api/products/${pid}/reviews`,
+      JSON.stringify({
+        rating:        Math.floor(Math.random() * 5) + 1,
+        reviewer_name: name,
+        comment:       `Load-test review from ${name}`,
+      }),
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    check(r, { '201': (r) => r.status === 201 });
   }
 }
