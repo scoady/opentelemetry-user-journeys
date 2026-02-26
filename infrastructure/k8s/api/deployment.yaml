@@ -16,6 +16,8 @@ spec:
       labels:
         app: api
         tier: backend
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: "true"
     spec:
       containers:
         - name: api
