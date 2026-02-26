@@ -13,19 +13,32 @@ spec:
       memory: "256Mi"
       cpu: "250m"
 
-  # GRAFANA_AUTH comes from the otel-vendor-credentials secret.
-  # Value is base64(instanceId:apiKey) — never committed to git.
-  # To populate: printf '<instanceId>:<apiKey>' | base64
-  # Then: kubectl create secret generic otel-vendor-credentials \
-  #         -n observability --from-literal=GRAFANA_AUTH=<value>
+  # Credentials come from the otel-vendor-credentials secret (never committed).
+  # To populate:
+  #   kubectl create secret generic otel-vendor-credentials \
+  #     -n observability \
+  #     --from-literal=GRAFANA_INSTANCE_ID=<instance-id> \
+  #     --from-literal=GRAFANA_API_KEY=<glc_...token>
   env:
-    - name: GRAFANA_AUTH
+    - name: GRAFANA_INSTANCE_ID
       valueFrom:
         secretKeyRef:
           name: otel-vendor-credentials
-          key: GRAFANA_AUTH
+          key: GRAFANA_INSTANCE_ID
+    - name: GRAFANA_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: otel-vendor-credentials
+          key: GRAFANA_API_KEY
 
   config:
+    extensions:
+      # basicauth extension handles Grafana Cloud's Basic auth correctly.
+      basicauth/grafana:
+        client_auth:
+          username: "${env:GRAFANA_INSTANCE_ID}"
+          password: "${env:GRAFANA_API_KEY}"
+
     receivers:
       otlp:
         protocols:
@@ -47,10 +60,11 @@ spec:
       # Grafana Cloud OTLP gateway (prod-us-east-0)
       otlp_http/grafana:
         endpoint: https://otlp-gateway-prod-us-east-0.grafana.net/otlp
-        headers:
-          authorization: "Basic ${env:GRAFANA_AUTH}"
+        auth:
+          authenticator: basicauth/grafana
 
     service:
+      extensions: [basicauth/grafana]
       pipelines:
         traces:
           receivers: [otlp]

@@ -1,0 +1,32 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: techmart
+  namespace: webstore
+spec:
+  # Ship everything to the in-cluster collector via gRPC.
+  exporter:
+    # Node.js auto-instrumentation uses OTLP/HTTP — port 4318, not gRPC 4317.
+    endpoint: http://otel-collector.observability.svc.cluster.local:4318
+
+  propagators:
+    - tracecontext
+    - baggage
+
+  sampler:
+    type: parentbased_traceidratio
+    argument: "1"
+
+  nodejs:
+    env:
+      # Enable all three signals.
+      - name: OTEL_METRICS_EXPORTER
+        value: otlp
+      - name: OTEL_LOGS_EXPORTER
+        value: otlp
+      # 60-second metric export interval (ms).
+      - name: OTEL_METRIC_EXPORT_INTERVAL
+        value: "60000"
+      # Suppress SDK-internal debug chatter.
+      - name: OTEL_LOG_LEVEL
+        value: warn
