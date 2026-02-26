@@ -46,36 +46,44 @@ helm upgrade --install opentelemetry-operator open-telemetry/opentelemetry-opera
 echo ""
 echo ">>> Deploying OpenTelemetry Collector…"
 kubectl apply -f "${K8S_TELEMETRY}/namespace.yaml"
-kubectl apply -f "${K8S_TELEMETRY}/collector/"
+
+# Apply collector config (everything except the secret — handled below).
+kubectl apply -f "${K8S_TELEMETRY}/collector/collector.yaml"
+
+# Only create the credentials secret if it doesn't already exist.
+# This prevents wiping real credentials on re-runs.
+if kubectl get secret otel-vendor-credentials -n observability &>/dev/null; then
+  echo "  Secret 'otel-vendor-credentials' already exists — skipping."
+else
+  echo "  Creating placeholder credentials secret…"
+  kubectl apply -f "${K8S_TELEMETRY}/collector/secret.yaml"
+  echo ""
+  echo "  ⚠️  Credentials secret is empty. Populate it before the collector"
+  echo "     can export to Grafana Cloud:"
+  echo ""
+  echo "    kubectl create secret generic otel-vendor-credentials \\"
+  echo "      -n observability --dry-run=client -o yaml \\"
+  echo "      --from-literal=GRAFANA_INSTANCE_ID=<your-stack-id> \\"
+  echo "      --from-literal=GRAFANA_API_KEY=<glc_...token> \\"
+  echo "    | kubectl apply -f -"
+  echo ""
+  echo "  Then restart the collector:"
+  echo "    kubectl rollout restart deployment/otel-collector -n observability"
+fi
 
 echo "  Waiting for collector to be ready…"
 kubectl wait --for=condition=available deployment/otel-collector \
   -n observability \
   --timeout=120s
 
-# ── 4. Instrumentation CR ─────────────────────────────────────────────────────
-# This CR tells the Operator to inject the Node.js SDK init container into
-# pods that carry the annotation:
-#   instrumentation.opentelemetry.io/inject-nodejs: "true"
-echo ""
-echo ">>> Applying Instrumentation CR (Node.js auto-instrumentation config)…"
-kubectl apply -f "${K8S_TELEMETRY}/instrumentation.yaml"
-
-# ── 5. Summary ────────────────────────────────────────────────────────────────
+# ── 4. Summary ────────────────────────────────────────────────────────────────
+# NOTE: The Instrumentation CR (instrumentation.yaml) targets the webstore
+# namespace and is applied by deploy.sh after the Helm install creates it.
 echo ""
 echo "✓ OTel telemetry stack ready!"
 echo ""
 echo "  Collector endpoints (reachable from any pod in the cluster):"
 echo "    OTLP gRPC:  otel-collector.observability.svc.cluster.local:4317"
 echo "    OTLP HTTP:  otel-collector.observability.svc.cluster.local:4318"
-echo ""
-echo "  Vendor credentials secret (create once per cluster if not already done):"
-echo "    kubectl create secret generic otel-vendor-credentials \\"
-echo "      -n observability \\"
-echo "      --from-literal=GRAFANA_INSTANCE_ID=<your-stack-id> \\"
-echo "      --from-literal=GRAFANA_API_KEY=<glc_...token>"
-echo ""
-echo "  After creating the secret, restart the collector to pick it up:"
-echo "    kubectl rollout restart deployment/otel-collector -n observability"
 echo ""
 kubectl get pods -n observability

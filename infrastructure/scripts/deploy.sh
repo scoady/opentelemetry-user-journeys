@@ -8,10 +8,6 @@
 #   4. THIS SCRIPT                                 — Helm install of the app
 #
 # For subsequent code or manifest changes, use build-and-load.sh instead.
-#
-# NOTE: If you previously deployed with raw `kubectl apply` manifests, remove
-# those resources first to avoid ownership conflicts:
-#   kubectl delete all,configmap,secret,ingress,pvc -n webstore --all
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -28,12 +24,17 @@ helm upgrade --install techmart "${CHART_DIR}" \
   --wait \
   --timeout 5m
 
+# ── Instrumentation CR ────────────────────────────────────────────────────────
+# Applied after Helm creates the webstore namespace. Tells the OTel Operator to
+# inject the Node.js SDK init container into pods with the inject-nodejs annotation.
 echo ""
-echo ">>> Waiting for all pods to be ready…"
-kubectl wait --for=condition=ready pod \
-  --selector app.kubernetes.io/instance=techmart \
-  -n webstore \
-  --timeout=120s
+echo ">>> Applying OTel Instrumentation CR…"
+kubectl apply -f "${ROOT_DIR}/infrastructure/k8s/telemetry/instrumentation.yaml"
+
+echo ""
+echo ">>> Restarting API pods so OTel webhook injects the init container…"
+kubectl rollout restart deployment/api -n webstore
+kubectl rollout status  deployment/api -n webstore --timeout=120s
 
 # Poll /api/health until we get JSON back. The frontend nginx proxies /api to
 # the API service, so a JSON response here confirms the full stack is live:
