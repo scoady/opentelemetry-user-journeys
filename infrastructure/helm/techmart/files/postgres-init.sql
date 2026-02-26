@@ -55,3 +55,7 @@ INSERT INTO products (name, description, price, emoji, category, stock) VALUES
 
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
+
+-- Product search indexes
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
+CREATE INDEX IF NOT EXISTS idx_products_name_lower ON products(LOWER(name));

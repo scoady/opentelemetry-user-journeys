@@ -23,6 +23,9 @@ const NAMES   = ['Alice', 'Bob', 'Carlos', 'Diana', 'Eve', 'Frank'];
 const DOMAINS = ['example.com', 'test.io', 'loadtest.dev'];
 const STREETS = ['1 Main St', '42 Oak Ave', '7 Elm Rd', '99 Pine Blvd'];
 
+const SEARCH_TERMS = ['keyboard', 'audio', 'wireless', 'webcam', 'mouse', 'laptop', 'usb', 'speaker'];
+const CATEGORIES   = ['Audio', 'Wearables', 'Accessories', 'Peripherals'];
+
 // Per-VU order ID cache. k6 VUs are long-lived within a scenario so this
 // accumulates real order IDs that can be looked up in the order-lookup CUJ.
 // Capped at 50 to avoid unbounded growth.
@@ -31,13 +34,13 @@ let recentOrderIds = [];
 export default function () {
   const roll = Math.random();
 
-  if (roll < 0.65) {
-    // 65 % — browse products  (cuj.product-discovery)
+  if (roll < 0.55) {
+    // 55% — browse products  (cuj.product-discovery)
     const r = http.get(`${BASE_URL}/api/products`);
     check(r, { '200': (r) => r.status === 200 });
 
-  } else if (roll < 0.85) {
-    // 20 % — place an order  (cuj.checkout)
+  } else if (roll < 0.73) {
+    // 18% — place an order  (cuj.checkout)
     const name = pick(NAMES);
     const r = http.post(
       `${BASE_URL}/api/orders`,
@@ -51,7 +54,6 @@ export default function () {
     );
     const ok = check(r, { '201': (r) => r.status === 201 });
     if (ok) {
-      // Save the order ID so this VU can look it up later.
       const body = JSON.parse(r.body);
       if (body.id) {
         recentOrderIds.push(body.id);
@@ -59,16 +61,22 @@ export default function () {
       }
     }
 
-  } else {
-    // 15 % — look up a recent order  (cuj.order-lookup)
+  } else if (roll < 0.85) {
+    // 12% — look up a recent order  (cuj.order-lookup)
     if (recentOrderIds.length === 0) {
-      // No orders placed by this VU yet — fall back to browse.
       const r = http.get(`${BASE_URL}/api/products`);
       check(r, { '200': (r) => r.status === 200 });
       return;
     }
     const id = pick(recentOrderIds);
     const r  = http.get(`${BASE_URL}/api/orders/${id}`);
+    check(r, { '200': (r) => r.status === 200 });
+
+  } else {
+    // 15% — search products  (cuj.product-search)
+    const term = pick(SEARCH_TERMS);
+    const cat  = Math.random() < 0.3 ? `&category=${pick(CATEGORIES)}` : '';
+    const r = http.get(`${BASE_URL}/api/products/search?q=${term}${cat}`);
     check(r, { '200': (r) => r.status === 200 });
   }
 }

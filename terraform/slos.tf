@@ -1,17 +1,18 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # TechMart Grafana SLOs
 #
-# 6 SLOs — availability + latency for each Critical User Journey:
+# 8 SLOs — availability + latency for each Critical User Journey:
 #
 #   CUJ                  Availability SLO   Latency SLO
 #   ─────────────────    ────────────────   ──────────────────
-#   checkout             99.9 % success     p99 < 2 s  (le="2000" bucket)
-#   product-discovery    99.9 % success     p99 < 1 s  (le="1000" bucket)
-#   order-lookup         99.9 % success     p99 < 1 s  (le="1000" bucket)
+#   checkout             99.9 % success     p99 < 2 s   (le="2000" bucket)
+#   product-discovery    99.9 % success     p99 < 1 s   (le="1000" bucket)
+#   order-lookup         99.9 % success     p99 < 1 s   (le="1000" bucket)
+#   product-search       99.9 % success     p99 < 500ms (le="500" bucket)
 #
 # Availability uses the native "ratio" query type (good/total counters).
 # Latency uses "freeform" with a histogram bucket fraction — the spanmetrics
-# connector emits explicit buckets 10ms…10s, so le="2000" and le="1000"
+# connector emits explicit buckets 10ms…10s, so le="2000", le="1000", le="500"
 # exist as exact boundaries in techmart_duration_milliseconds_bucket.
 #
 # Both fast-burn (14.4×) and slow-burn (6×) alert rules are generated
@@ -401,6 +402,133 @@ resource "grafana_slo" "order_lookup_latency" {
       annotation {
         key   = "description"
         value = "Order lookup p99 latency SLO burning >6× rate. Check orders JOIN query performance."
+      }
+    }
+  }
+}
+
+# ── Product Search ────────────────────────────────────────────────────────────
+
+resource "grafana_slo" "product_search_availability" {
+  name        = "Product Search — Availability"
+  description = "99.9 % of cuj.product-search spans must succeed. Covers GET /api/products/search."
+  folder_uid  = grafana_folder.techmart.uid
+
+  destination_datasource {
+    uid = local.prom_uid
+  }
+
+  query {
+    type = "ratio"
+    ratio {
+      success_metric = "techmart_calls_total{span_name=\"cuj.product-search\", status_code!=\"STATUS_CODE_ERROR\"}"
+      total_metric   = "techmart_calls_total{span_name=\"cuj.product-search\"}"
+    }
+  }
+
+  objectives {
+    value  = 0.999
+    window = "30d"
+  }
+
+  label {
+    key   = "cuj"
+    value = "product-search"
+  }
+  label {
+    key   = "slo_type"
+    value = "availability"
+  }
+
+  alerting {
+    fastburn {
+      label {
+        key   = "severity"
+        value = "critical"
+      }
+      annotation {
+        key   = "name"
+        value = "Product Search Availability — Fast Burn"
+      }
+      annotation {
+        key   = "description"
+        value = "Product search error budget burning >14.4× rate. Customers cannot search or filter products."
+      }
+    }
+    slowburn {
+      label {
+        key   = "severity"
+        value = "warning"
+      }
+      annotation {
+        key   = "name"
+        value = "Product Search Availability — Slow Burn"
+      }
+      annotation {
+        key   = "description"
+        value = "Product search error budget burning >6× rate. Investigate search query errors and DB index health."
+      }
+    }
+  }
+}
+
+resource "grafana_slo" "product_search_latency" {
+  name        = "Product Search — Latency p99 < 500 ms"
+  description = "99.9 % of cuj.product-search requests must complete within 500 ms. Measured via the le=500 histogram bucket."
+  folder_uid  = grafana_folder.techmart.uid
+
+  destination_datasource {
+    uid = local.prom_uid
+  }
+
+  query {
+    type = "freeform"
+    freeform {
+      query = "sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-search\", le=\"500\"}[$__rate_interval])) / sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-search\", le=\"+Inf\"}[$__rate_interval]))"
+    }
+  }
+
+  objectives {
+    value  = 0.999
+    window = "30d"
+  }
+
+  label {
+    key   = "cuj"
+    value = "product-search"
+  }
+  label {
+    key   = "slo_type"
+    value = "latency"
+  }
+
+  alerting {
+    fastburn {
+      label {
+        key   = "severity"
+        value = "critical"
+      }
+      annotation {
+        key   = "name"
+        value = "Product Search Latency — Fast Burn"
+      }
+      annotation {
+        key   = "description"
+        value = "Product search p99 latency SLO burning >14.4× rate. More than 0.1 % of search requests exceeding 500 ms. Check ILIKE query performance and DB indexes."
+      }
+    }
+    slowburn {
+      label {
+        key   = "severity"
+        value = "warning"
+      }
+      annotation {
+        key   = "name"
+        value = "Product Search Latency — Slow Burn"
+      }
+      annotation {
+        key   = "description"
+        value = "Product search p99 latency SLO burning >6× rate. Review search query performance and products table indexes."
       }
     }
   }
