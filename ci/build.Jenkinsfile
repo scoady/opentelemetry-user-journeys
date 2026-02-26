@@ -2,10 +2,8 @@
 // Builds api, inventory-svc, and frontend images with Kaniko and pushes them
 // to the in-cluster Docker registry, then triggers the deploy pipeline.
 //
-// Requires agent label 'kaniko' (configured via JCasC in jenkins/values.yaml):
-//   - jnlp container: Jenkins agent (clones repo from GitHub into workspace)
-//   - kaniko container: gcr.io/kaniko-project/executor:v1.23.2-debug
-//   - Both share an emptyDir workspace volume for build context
+// Each image builds in its own kaniko pod because kaniko mutates the root
+// filesystem — sharing a container across builds causes corruption.
 
 def REGISTRY = "registry.registry.svc.cluster.local:5000"
 def IMAGE_TAG = ""
@@ -22,8 +20,6 @@ pipeline {
   stages {
 
     // ── Stage 1: Compute image tag ─────────────────────────────────────────
-    // Reads the git SHA from the SCM-checked-out workspace.
-    // Appends -dev if the working tree has uncommitted changes.
     stage('Tag') {
       steps {
         script {
@@ -43,75 +39,78 @@ pipeline {
     }
 
     // ── Stage 2: Build and push (3 images) ────────────────────────────────
-    // Each stage calls the kaniko executor directly from the sidecar container.
-    // --context uses the workspace directory checked out by the SCM step.
-    // --insecure / --skip-tls-verify allow plain-HTTP access to the in-cluster
-    //   registry (which has no TLS certificate in this local dev setup).
-    // Both SHA tag and :latest are pushed so `helm upgrade` can use either.
-    // Builds run sequentially because kaniko mutates the root filesystem —
-    // parallel execution in the same container corrupts later builds.
-    stage('Build api') {
-      steps {
-        container('kaniko') {
-          sh """
-            /kaniko/executor \\
-              --dockerfile=${WORKSPACE}/api/Dockerfile \\
-              --context=dir://${WORKSPACE}/api \\
-              --destination=${REGISTRY}/webstore/api:${IMAGE_TAG} \\
-              --destination=${REGISTRY}/webstore/api:latest \\
-              --insecure \\
-              --insecure-pull \\
-              --skip-tls-verify \\
-              --skip-tls-verify-pull \\
-              --cache=false \\
-              --verbosity=info
-          """
-        }
-      }
-    }
+    // Each branch spawns its own kaniko pod so filesystem mutations from one
+    // build cannot corrupt another.
+    stage('Build images') {
+      parallel {
 
-    stage('Build inventory-svc') {
-      steps {
-        container('kaniko') {
-          sh """
-            /kaniko/executor \\
-              --dockerfile=${WORKSPACE}/inventory-svc/Dockerfile \\
-              --context=dir://${WORKSPACE}/inventory-svc \\
-              --destination=${REGISTRY}/webstore/inventory-svc:${IMAGE_TAG} \\
-              --destination=${REGISTRY}/webstore/inventory-svc:latest \\
-              --insecure \\
-              --insecure-pull \\
-              --skip-tls-verify \\
-              --skip-tls-verify-pull \\
-              --cache=false \\
-              --verbosity=info
-          """
+        stage('api') {
+          agent { label 'kaniko' }
+          steps {
+            container('kaniko') {
+              sh """
+                /kaniko/executor \\
+                  --dockerfile=${WORKSPACE}/api/Dockerfile \\
+                  --context=dir://${WORKSPACE}/api \\
+                  --destination=${REGISTRY}/webstore/api:${IMAGE_TAG} \\
+                  --destination=${REGISTRY}/webstore/api:latest \\
+                  --insecure \\
+                  --insecure-pull \\
+                  --skip-tls-verify \\
+                  --skip-tls-verify-pull \\
+                  --cache=false \\
+                  --verbosity=info
+              """
+            }
+          }
         }
-      }
-    }
 
-    stage('Build frontend') {
-      steps {
-        container('kaniko') {
-          sh """
-            /kaniko/executor \\
-              --dockerfile=${WORKSPACE}/frontend/Dockerfile \\
-              --context=dir://${WORKSPACE}/frontend \\
-              --destination=${REGISTRY}/webstore/frontend:${IMAGE_TAG} \\
-              --destination=${REGISTRY}/webstore/frontend:latest \\
-              --insecure \\
-              --insecure-pull \\
-              --skip-tls-verify \\
-              --skip-tls-verify-pull \\
-              --cache=false \\
-              --verbosity=info
-          """
+        stage('inventory-svc') {
+          agent { label 'kaniko' }
+          steps {
+            container('kaniko') {
+              sh """
+                /kaniko/executor \\
+                  --dockerfile=${WORKSPACE}/inventory-svc/Dockerfile \\
+                  --context=dir://${WORKSPACE}/inventory-svc \\
+                  --destination=${REGISTRY}/webstore/inventory-svc:${IMAGE_TAG} \\
+                  --destination=${REGISTRY}/webstore/inventory-svc:latest \\
+                  --insecure \\
+                  --insecure-pull \\
+                  --skip-tls-verify \\
+                  --skip-tls-verify-pull \\
+                  --cache=false \\
+                  --verbosity=info
+              """
+            }
+          }
         }
-      }
+
+        stage('frontend') {
+          agent { label 'kaniko' }
+          steps {
+            container('kaniko') {
+              sh """
+                /kaniko/executor \\
+                  --dockerfile=${WORKSPACE}/frontend/Dockerfile \\
+                  --context=dir://${WORKSPACE}/frontend \\
+                  --destination=${REGISTRY}/webstore/frontend:${IMAGE_TAG} \\
+                  --destination=${REGISTRY}/webstore/frontend:latest \\
+                  --insecure \\
+                  --insecure-pull \\
+                  --skip-tls-verify \\
+                  --skip-tls-verify-pull \\
+                  --cache=false \\
+                  --verbosity=info
+              """
+            }
+          }
+        }
+
+      } // end parallel
     }
 
     // ── Stage 3: Trigger deploy ────────────────────────────────────────────
-    // Blocks until techmart-deploy completes and propagates its status.
     stage('Deploy') {
       steps {
         script {
