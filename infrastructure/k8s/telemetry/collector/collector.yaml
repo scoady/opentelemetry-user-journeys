@@ -56,7 +56,7 @@ spec:
     connectors:
       spanmetrics:
         namespace: techmart
-        aggregation_temporality: "AGGREGATION_TEMPORALITY_DELTA"
+        aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"
         histogram:
           explicit:
             buckets: [10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2s, 5s, 10s]
