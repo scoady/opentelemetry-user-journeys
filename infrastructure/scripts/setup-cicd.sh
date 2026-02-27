@@ -101,6 +101,27 @@ echo ""
 echo ">>> Applying Jenkins deployer RBAC…"
 kubectl apply -f "${K8S_CICD_DIR}/rbac.yaml"
 
+# ── 6b. Create Grafana credentials for Terraform pipeline ────────────────
+# The techmart-terraform pipeline injects these as TF_VAR_grafana_url and
+# TF_VAR_grafana_api_key. State is stored as a Kubernetes Secret by the
+# Terraform kubernetes backend (secret: tfstate-default-techmart in cicd ns).
+echo ""
+kubectl create namespace cicd --dry-run=client -o yaml | kubectl apply -f -
+if kubectl get secret grafana-credentials -n cicd &>/dev/null; then
+  echo ">>> grafana-credentials secret already exists in cicd namespace — skipping."
+else
+  echo ">>> Creating grafana-credentials secret in cicd namespace…"
+  echo "  Set GRAFANA_URL and GRAFANA_API_KEY env vars before running this script,"
+  echo "  or update later:"
+  echo "    kubectl create secret generic grafana-credentials -n cicd \\"
+  echo "      --from-literal=GRAFANA_URL=https://your-org.grafana.net \\"
+  echo "      --from-literal=GRAFANA_API_KEY=glsa_... \\"
+  echo "      --dry-run=client -o yaml | kubectl apply -f -"
+  kubectl create secret generic grafana-credentials -n cicd \
+    --from-literal=GRAFANA_URL="${GRAFANA_URL:-https://your-org.grafana.net}" \
+    --from-literal=GRAFANA_API_KEY="${GRAFANA_API_KEY:-changeme}"
+fi
+
 # ── 7. Deploy Jenkins ─────────────────────────────────────────────────────────
 echo ""
 echo ">>> Deploying Jenkins (jenkins/jenkins v${JENKINS_CHART_VERSION})…"
@@ -145,8 +166,9 @@ echo "    Username: admin"
 echo "    Password: ${JENKINS_PASS}"
 echo ""
 echo "  Pipeline jobs are pre-configured via JCasC:"
-echo "    techmart-build  → ci/build.Jenkinsfile   (polls /src/repo every 5 min)"
-echo "    techmart-deploy → ci/deploy.Jenkinsfile  (parameterized: IMAGE_TAG)"
+echo "    techmart-build     → ci/build.Jenkinsfile      (polls repo every 5 min)"
+echo "    techmart-deploy    → ci/deploy.Jenkinsfile     (parameterized: IMAGE_TAG)"
+echo "    techmart-terraform → ci/terraform.Jenkinsfile  (SLOs + dashboards → Grafana Cloud)"
 echo ""
 echo "  Trigger a build manually:"
 echo "    Open http://jenkins.localhost → techmart-build → Build Now"

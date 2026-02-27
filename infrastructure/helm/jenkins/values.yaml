@@ -186,9 +186,56 @@ controller:
                         resourceLimitCpu: "500m"
                         resourceLimitMemory: "512Mi"
 
-      # Pre-create the two pipeline jobs using Job DSL.
-      # techmart-build: builds images with Kaniko, then triggers techmart-deploy.
-      # techmart-deploy: parameterized helm upgrade (IMAGE_TAG parameter).
+                  # ── terraform-agent ─────────────────────────────────────────
+                  # Two containers: jnlp + hashicorp/terraform.
+                  # Grafana credentials injected from k8s Secret.
+                  - name: "terraform-agent"
+                    label: "terraform"
+                    serviceAccount: "jenkins"
+                    namespace: "cicd"
+                    nodeUsageMode: "EXCLUSIVE"
+                    workspaceVolume:
+                      emptyDirWorkspaceVolume:
+                        memory: false
+                    containers:
+                      - name: "jnlp"
+                        image: "jenkins/inbound-agent:3327.v868139a_d00e0-7"
+                        alwaysPullImage: false
+                        workingDir: "/home/jenkins/agent"
+                        resourceRequestCpu: "200m"
+                        resourceRequestMemory: "256Mi"
+                        resourceLimitCpu: "500m"
+                        resourceLimitMemory: "512Mi"
+                        ttyEnabled: false
+                        envVars:
+                          - envVar:
+                              key: "HOME"
+                              value: "/home/jenkins/agent"
+                      - name: "terraform"
+                        image: "hashicorp/terraform:1.9"
+                        alwaysPullImage: false
+                        command: "cat"
+                        args: ""
+                        ttyEnabled: true
+                        workingDir: "/home/jenkins/agent"
+                        resourceRequestCpu: "100m"
+                        resourceRequestMemory: "128Mi"
+                        resourceLimitCpu: "500m"
+                        resourceLimitMemory: "512Mi"
+                        envVars:
+                          - secretEnvVar:
+                              key: "TF_VAR_grafana_url"
+                              secretName: "grafana-credentials"
+                              secretKey: "GRAFANA_URL"
+                          - secretEnvVar:
+                              key: "TF_VAR_grafana_api_key"
+                              secretName: "grafana-credentials"
+                              secretKey: "GRAFANA_API_KEY"
+
+      # Pre-create pipeline jobs using Job DSL.
+      # techmart-build:     builds images with Kaniko, then triggers techmart-deploy.
+      # techmart-deploy:    parameterized helm upgrade (IMAGE_TAG), then triggers terraform.
+      # techmart-terraform: applies SLOs + dashboards to Grafana Cloud.
       pipeline-jobs: |
         jobs:
           - script: >
@@ -233,6 +280,27 @@ controller:
                       }
                     }
                     scriptPath('ci/deploy.Jenkinsfile')
+                  }
+                }
+                logRotator {
+                  numToKeep(20)
+                }
+              }
+          - script: >
+              pipelineJob('techmart-terraform') {
+                description('Apply Terraform SLOs and dashboards to Grafana Cloud.')
+                definition {
+                  cpsScm {
+                    scm {
+                      git {
+                        remote {
+                          url('git@github.com:scoady/opentelemetry-user-journeys.git')
+                          credentials('github-ssh')
+                        }
+                        branch('*/main')
+                      }
+                    }
+                    scriptPath('ci/terraform.Jenkinsfile')
                   }
                 }
                 logRotator {

@@ -88,6 +88,15 @@ pipeline {
       }
     }
 
+    // ── Terraform ─────────────────────────────────────────────────────────
+    // Apply SLOs and dashboards to Grafana Cloud.
+    // Runs in a separate agent pod with the terraform container.
+    stage('Terraform') {
+      steps {
+        build job: 'techmart-terraform', wait: true, propagate: true
+      }
+    }
+
   }
 
   post {

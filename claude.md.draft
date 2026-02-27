@@ -6,7 +6,7 @@ TechMart is a 3-tier web store (React frontend, Node.js API, PostgreSQL) running
 
 **Stack**: React/Vite frontend → nginx reverse proxy → Express API → PostgreSQL
 **Observability**: OTel auto-instrumentation (operator) → spanmetrics connector → Grafana Cloud (Mimir + Tempo)
-**CI/CD**: Jenkins (in-cluster) → Kaniko builds → Helm deploys
+**CI/CD**: Jenkins (in-cluster) → Kaniko builds → Helm deploys → Terraform apply (SLOs + dashboards)
 **SLOs**: Terraform-managed `grafana_slo` resources with fastburn/slowburn alerting
 
 ## Architecture
@@ -78,6 +78,7 @@ terraform/
 ci/
   build.Jenkinsfile         Parallel Kaniko builds → push to in-cluster registry
   deploy.Jenkinsfile        Helm upgrade + kubectl rollout verification
+  terraform.Jenkinsfile     Terraform init/plan/apply → Grafana Cloud SLOs + dashboards
 ```
 
 ## CUJ Instrumentation Pattern
@@ -193,17 +194,25 @@ No collector, Helm template, or Jenkinsfile changes needed — spanmetrics auto-
 ./infrastructure/scripts/teardown.sh
 ```
 
-**Feature branch workflow**: Create `feat/<name>` → implement → commit → push → merge to main → Jenkins auto-builds and deploys.
+**Feature branch workflow**: Create `feat/<name>` → implement → commit → push → merge to main → Jenkins auto-builds, deploys, and applies Terraform.
 
 **DB migration**: All DDL uses `CREATE TABLE/INDEX IF NOT EXISTS` so it's idempotent. For existing clusters, delete the postgres PVC and redeploy, or `kubectl exec` the DDL directly.
 
 ## Terraform (SLOs + Dashboards)
 
+**State backend**: Kubernetes Secret (`tfstate-default-techmart` in `cicd` namespace). Zero additional infrastructure — shared between local dev and Jenkins CI.
+
+**CI/CD**: The `techmart-terraform` Jenkins pipeline runs automatically after every deploy (`build → deploy → terraform`). Grafana credentials come from the `grafana-credentials` Secret in `cicd` namespace.
+
 ```bash
+# Local development
 cd terraform
-terraform init
-terraform plan     # Shows grafana_slo and grafana_dashboard resources
-terraform apply    # Creates SLOs and dashboards in Grafana Cloud
+terraform init              # Connects to Kubernetes backend
+terraform plan              # Shows grafana_slo and grafana_dashboard resources
+terraform apply             # Creates SLOs and dashboards in Grafana Cloud
+
+# First-time migration from local state
+terraform init -migrate-state   # Moves terraform.tfstate → Kubernetes Secret
 ```
 
 Each CUJ gets exactly 2 `grafana_slo` resources:
@@ -238,7 +247,7 @@ Admin UI → POST /api/admin/upload-products → [API: create job, produce to Ka
 - **In-cluster registry**: `registry.registry.svc.cluster.local:5000` (plain HTTP, containerd patched)
 - **Frontend proxy**: nginx proxies `/api/` → `http://api:3001` (avoids ingress routing race)
 - **Cache-Control: no-store** on all API responses
-- **Kafka**: Bitnami KRaft mode (no Zookeeper), auto-create topics, headless service
+- **Kafka**: Apache Kafka 3.9.0, KRaft mode (no Zookeeper), auto-create topics, headless service
 - **App namespace**: `webstore`
 - **Observability namespace**: `observability`
 - **Grafana Cloud secret**: `otel-vendor-credentials` in `observability` ns (never committed)
