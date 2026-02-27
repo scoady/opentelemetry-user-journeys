@@ -82,14 +82,13 @@ ci/
 
 ## CUJ Instrumentation Pattern
 
-### Originating service (API)
+### Synchronous — Originating service (API)
 
 ```javascript
 const { withJourney } = require('./tracing');
 
 router.get('/search', async (req, res) => {
   const rows = await withJourney('product-search', async () => {
-    // DB queries, span attributes, business logic
     const span = trace.getActiveSpan();
     if (span) span.setAttribute('search.query', q);
     return result.rows;
@@ -104,12 +103,56 @@ router.get('/search', async (req, res) => {
 3. Injects W3C Baggage so downstream services inherit `cuj.name`
 4. Records exceptions and sets ERROR status on failure
 
-### Downstream service (inventory-svc)
+### Synchronous — Downstream service (inventory-svc)
 
 ```javascript
 const { cujBaggageMiddleware } = require('./tracing');
 app.use(cujBaggageMiddleware);
 // Automatically stamps cuj.name from incoming baggage onto the active span
+```
+
+### Asynchronous — Kafka producer (API admin route)
+
+```javascript
+// Inside withJourney context, the kafkajs auto-instrumentation
+// injects traceparent + baggage into Kafka message headers
+const result = await withJourney('product-upload', async () => {
+  const traceId = trace.getActiveSpan()?.spanContext()?.traceId;
+  const job = await db.query('INSERT INTO upload_jobs ...');
+  await producer.send({
+    topic: 'product-uploads',
+    messages: [{ key: String(job.id), value: JSON.stringify({ job_id, products }) }],
+  });
+  return { job_id: job.id, trace_id: traceId };
+});
+res.status(202).json(result);
+```
+
+### Asynchronous — Kafka consumer (product-worker)
+
+```javascript
+// kafkajs auto-instrumentation extracts trace context from message headers.
+// withJourney creates cuj.product-upload-job as child of kafka.receive span.
+await consumer.run({
+  eachMessage: async ({ message }) => {
+    const { job_id, products } = JSON.parse(message.value.toString());
+    await withJourney('product-upload-job', async () => {
+      // batch INSERT products, update job status
+    });
+  },
+});
+```
+
+**Resulting trace** (single trace, parent-child through Kafka):
+```
+HTTP POST /api/admin/upload-products
+  └─ cuj.product-upload
+       └─ pg.query INSERT INTO upload_jobs
+       └─ kafka.produce product-uploads        ← auto-instrumented
+            └─ kafka.receive product-uploads    ← auto-instrumented (in worker)
+                 └─ cuj.product-upload-job
+                      └─ pg.query INSERT INTO products (batch)
+                      └─ pg.query UPDATE upload_jobs
 ```
 
 ### Metrics derived automatically
@@ -118,7 +161,7 @@ The OTel collector's spanmetrics connector generates:
 - `techmart_calls_total{span_name="cuj.<name>", status_code="..."}` — request counter
 - `techmart_duration_milliseconds_bucket{span_name="cuj.<name>", le="..."}` — latency histogram
 
-No manual metrics instrumentation needed — just use `withJourney()`.
+No manual metrics instrumentation needed — just use `withJourney()`. This applies to both synchronous HTTP routes and asynchronous Kafka consumer handlers.
 
 ## Adding a New Feature / CUJ
 
