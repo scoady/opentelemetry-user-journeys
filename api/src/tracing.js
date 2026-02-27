@@ -51,6 +51,7 @@
  */
 
 const { trace, context, propagation, SpanStatusCode } = require('@opentelemetry/api');
+const { applyChaos } = require('./chaos');
 
 const tracer = trace.getTracer('techmart-api', '1.0.0');
 
@@ -92,7 +93,7 @@ async function withJourney(name, fn) {
       { attributes: { 'cuj.name': name, 'cuj.critical': true } },
       async (span) => {
         try {
-          const result = await fn();
+          const result = await applyChaos(name, fn);
           span.setStatus({ code: SpanStatusCode.OK });
           return result;
         } catch (err) {

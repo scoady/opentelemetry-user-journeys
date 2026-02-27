@@ -90,4 +90,88 @@ router.get('/jobs/:id', async (req, res) => {
   }
 });
 
+// ── Chaos / fault injection endpoints ────────────────────────────────────────
+const http = require('http');
+const chaos = require('../chaos');
+
+const INVENTORY_URL = process.env.INVENTORY_URL || 'http://inventory-svc:3002';
+
+// Inventory-delay proxy routes MUST come before the parameterized :cuj routes,
+// otherwise Express matches :cuj = "inventory-delay".
+
+// GET /api/admin/chaos/inventory-delay — read current inventory-svc delay
+router.get('/chaos/inventory-delay', (req, res) => {
+  const url = new URL('/admin/delay', INVENTORY_URL);
+  http.get({ hostname: url.hostname, port: url.port || 80, path: url.pathname }, (proxyRes) => {
+    let data = '';
+    proxyRes.on('data', chunk => data += chunk);
+    proxyRes.on('end', () => {
+      try { res.status(proxyRes.statusCode).json(JSON.parse(data)); }
+      catch { res.status(502).json({ error: 'Bad response from inventory-svc' }); }
+    });
+  }).on('error', (err) => {
+    res.status(502).json({ error: `inventory-svc unreachable: ${err.message}` });
+  });
+});
+
+// PUT /api/admin/chaos/inventory-delay — set inventory-svc delay
+router.put('/chaos/inventory-delay', (req, res) => {
+  const { delayMs } = req.body;
+  if (typeof delayMs !== 'number' || delayMs < 0) {
+    return res.status(400).json({ error: 'delayMs must be a non-negative number' });
+  }
+
+  const body = Buffer.from(JSON.stringify({ delayMs }));
+  const url  = new URL('/admin/delay', INVENTORY_URL);
+
+  const proxyReq = http.request({
+    hostname: url.hostname,
+    port:     url.port || 80,
+    path:     url.pathname,
+    method:   'PUT',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': body.length },
+  }, (proxyRes) => {
+    let data = '';
+    proxyRes.on('data', chunk => data += chunk);
+    proxyRes.on('end', () => {
+      try { res.status(proxyRes.statusCode).json(JSON.parse(data)); }
+      catch { res.status(502).json({ error: 'Bad response from inventory-svc' }); }
+    });
+  });
+
+  proxyReq.on('error', (err) => {
+    res.status(502).json({ error: `inventory-svc unreachable: ${err.message}` });
+  });
+  proxyReq.write(body);
+  proxyReq.end();
+});
+
+// GET /api/admin/chaos — list all active faults
+router.get('/chaos', (req, res) => {
+  res.json({ faults: chaos.listFaults(), validCujs: [...chaos.VALID_CUJS] });
+});
+
+// PUT /api/admin/chaos/:cuj — set fault for a CUJ
+router.put('/chaos/:cuj', (req, res) => {
+  try {
+    const { delayMs = 0, errorRate = 0 } = req.body;
+    chaos.setFault(req.params.cuj, { delayMs, errorRate });
+    res.json({ cuj: req.params.cuj, ...chaos.getFault(req.params.cuj) });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// DELETE /api/admin/chaos/:cuj — clear fault for a CUJ
+router.delete('/chaos/:cuj', (req, res) => {
+  chaos.clearFault(req.params.cuj);
+  res.json({ cleared: req.params.cuj });
+});
+
+// DELETE /api/admin/chaos — clear ALL faults
+router.delete('/chaos', (req, res) => {
+  chaos.clearAll();
+  res.json({ cleared: 'all' });
+});
+
 module.exports = router;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const CATEGORIES = ['Audio', 'Wearables', 'Accessories', 'Peripherals', 'Smart Home', 'Gaming'];
 const EMOJIS_BY_CATEGORY = {
@@ -41,6 +41,57 @@ function generateProducts(count) {
   return products;
 }
 
+// ── Chaos row sub-component ──────────────────────────────────────────────────
+function ChaosRow({ cuj, fault, onSet, onClear }) {
+  const isActive = !!fault;
+  const [delayMs, setDelayMs] = useState(fault?.delayMs || 3000);
+  const [errorRate, setErrorRate] = useState(fault?.errorRate || 0);
+
+  return (
+    <div className={`chaos-row ${isActive ? 'active' : ''}`}>
+      <div className="chaos-cuj-name">
+        <span className={`chaos-dot ${isActive ? 'on' : 'off'}`} />
+        {cuj}
+      </div>
+      <div className="chaos-controls">
+        <label>Delay:</label>
+        <input
+          type="number"
+          min="0"
+          step="500"
+          value={delayMs}
+          onChange={e => setDelayMs(parseInt(e.target.value) || 0)}
+          className="chaos-input"
+        />
+        <span className="chaos-unit">ms</span>
+        <label>Error:</label>
+        <input
+          type="number"
+          min="0"
+          max="1"
+          step="0.1"
+          value={errorRate}
+          onChange={e => setErrorRate(parseFloat(e.target.value) || 0)}
+          className="chaos-input chaos-input-sm"
+        />
+        {isActive ? (
+          <button className="chaos-btn chaos-btn-clear" onClick={() => onClear(cuj)}>
+            Clear
+          </button>
+        ) : (
+          <button
+            className="chaos-btn chaos-btn-inject"
+            onClick={() => onSet(cuj, delayMs, errorRate)}
+          >
+            Inject
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Main Admin component ─────────────────────────────────────────────────────
 export default function Admin({ onBack }) {
   const [count, setCount] = useState(10);
   const [products, setProducts] = useState(null);
@@ -52,10 +103,69 @@ export default function Admin({ onBack }) {
   const startTimeRef = useRef(null);
   const [elapsed, setElapsed] = useState(null);
 
+  // Chaos state
+  const [chaosConfig, setChaosConfig] = useState({ faults: {}, validCujs: [] });
+  const [inventoryDelay, setInventoryDelay] = useState(500);
+  const [chaosLoading, setChaosLoading] = useState(true);
+
   useEffect(() => () => {
     if (pollRef.current) clearInterval(pollRef.current);
   }, []);
 
+  // ── Chaos fetchers ──
+  const fetchChaos = useCallback(async () => {
+    try {
+      const [chaosRes, delayRes] = await Promise.all([
+        fetch('/api/admin/chaos'),
+        fetch('/api/admin/chaos/inventory-delay'),
+      ]);
+      if (chaosRes.ok) setChaosConfig(await chaosRes.json());
+      if (delayRes.ok) {
+        const d = await delayRes.json();
+        setInventoryDelay(d.delayMs);
+      }
+    } catch { /* ignore */ }
+    setChaosLoading(false);
+  }, []);
+
+  useEffect(() => { fetchChaos(); }, [fetchChaos]);
+
+  const handleSetFault = async (cuj, delayMs, errorRate) => {
+    await fetch(`/api/admin/chaos/${cuj}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ delayMs, errorRate }),
+    });
+    fetchChaos();
+  };
+
+  const handleClearFault = async (cuj) => {
+    await fetch(`/api/admin/chaos/${cuj}`, { method: 'DELETE' });
+    fetchChaos();
+  };
+
+  const handleClearAll = async () => {
+    await Promise.all([
+      fetch('/api/admin/chaos', { method: 'DELETE' }),
+      fetch('/api/admin/chaos/inventory-delay', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delayMs: 500 }),
+      }),
+    ]);
+    fetchChaos();
+  };
+
+  const handleInventoryDelay = async (ms) => {
+    await fetch('/api/admin/chaos/inventory-delay', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ delayMs: ms }),
+    });
+    fetchChaos();
+  };
+
+  // ── Upload handlers ──
   const handleGenerate = () => {
     const generated = generateProducts(Math.max(1, Math.min(count, 500)));
     setProducts(generated);
@@ -116,8 +226,9 @@ export default function Admin({ onBack }) {
   return (
     <div className="admin-wrap">
       <button className="back-link" onClick={onBack}>&larr; Back to Products</button>
-      <h1 className="section-title">Admin: Bulk Product Upload</h1>
+      <h1 className="section-title">Admin</h1>
 
+      {/* ── Bulk Product Upload ── */}
       <div className="admin-card">
         <div className="admin-section">
           <h2 className="admin-section-title">1. Generate Products</h2>
@@ -196,6 +307,67 @@ export default function Admin({ onBack }) {
             )}
           </div>
         )}
+      </div>
+
+      {/* ── Chaos Engineering ── */}
+      <div className="chaos-card">
+        <div className="chaos-header">
+          <h2 className="admin-section-title">Chaos Engineering</h2>
+          <button className="chaos-reset-btn" onClick={handleClearAll}>
+            Reset All
+          </button>
+        </div>
+        <p className="admin-hint">
+          Inject latency or errors into CUJs at runtime. Faults are in-memory and clear on pod restart.
+        </p>
+
+        {/* Scenario A: Downstream service delay */}
+        <div className="chaos-scenario">
+          <h3 className="chaos-scenario-title">Downstream Service Delay</h3>
+          <p className="admin-hint">
+            Controls the inventory-svc artificial delay. Affects the checkout CUJ — the HTTP span
+            to inventory-svc will show the full delay in trace waterfalls.
+          </p>
+          <div className="chaos-delay-row">
+            <label>inventory-svc delay:</label>
+            <span className="chaos-current">{inventoryDelay}ms</span>
+            <div className="chaos-presets">
+              {[500, 2000, 5000, 10000].map(ms => (
+                <button
+                  key={ms}
+                  className={`chaos-preset ${inventoryDelay === ms ? 'active' : ''}`}
+                  onClick={() => handleInventoryDelay(ms)}
+                >
+                  {ms >= 1000 ? `${ms / 1000}s` : `${ms}ms`}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Scenario B: Per-CUJ fault injection */}
+        <div className="chaos-scenario">
+          <h3 className="chaos-scenario-title">CUJ Fault Injection</h3>
+          <p className="admin-hint">
+            Inject delay or errors directly into CUJ spans. Shows as chaos.delay / chaos.error
+            child spans in traces.
+          </p>
+          {chaosLoading ? (
+            <p className="loading">Loading...</p>
+          ) : (
+            <div className="chaos-cuj-list">
+              {chaosConfig.validCujs.map(cuj => (
+                <ChaosRow
+                  key={cuj}
+                  cuj={cuj}
+                  fault={chaosConfig.faults[cuj] || null}
+                  onSet={handleSetFault}
+                  onClear={handleClearFault}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

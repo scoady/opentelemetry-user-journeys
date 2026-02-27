@@ -22,7 +22,8 @@ const app  = express();
 const PORT = parseInt(process.env.PORT || '3002');
 
 // Configurable delay — simulates an inventory DB that can be fast or slow.
-const DELAY_MS = parseInt(process.env.ARTIFICIAL_DELAY_MS || '500');
+// Mutable: can be changed at runtime via PUT /admin/delay for chaos demos.
+let delayMs = parseInt(process.env.ARTIFICIAL_DELAY_MS || '500');
 
 app.use(express.json());
 
@@ -41,21 +42,37 @@ app.post('/reserve', async (req, res) => {
   }
 
   // Simulate inventory system latency (DB lookup, distributed lock, etc.)
-  if (DELAY_MS > 0) {
-    await new Promise(r => setTimeout(r, DELAY_MS));
+  if (delayMs > 0) {
+    await new Promise(r => setTimeout(r, delayMs));
   }
 
   res.json({
     reserved: true,
     items: items.map(i => ({ ...i, reserved: true })),
-    delay_ms: DELAY_MS,
+    delay_ms: delayMs,
   });
 });
 
-app.get('/health', (req, res) => res.json({ status: 'ok', delay_ms: DELAY_MS }));
+app.get('/health', (req, res) => res.json({ status: 'ok', delay_ms: delayMs }));
+
+// Runtime delay control for chaos demos
+app.put('/admin/delay', (req, res) => {
+  const { delayMs: newDelay } = req.body;
+  if (typeof newDelay !== 'number' || newDelay < 0) {
+    return res.status(400).json({ error: 'delayMs must be a non-negative number' });
+  }
+  const previous = delayMs;
+  delayMs = Math.floor(newDelay);
+  console.log(`inventory-svc delay changed: ${previous}ms -> ${delayMs}ms`);
+  res.json({ previous, current: delayMs });
+});
+
+app.get('/admin/delay', (req, res) => {
+  res.json({ delayMs });
+});
 
 app.use((req, res) => res.status(404).json({ error: `${req.path} not found` }));
 
 app.listen(PORT, () =>
-  console.log(`inventory-svc running on port ${PORT} (artificial delay: ${DELAY_MS}ms)`)
+  console.log(`inventory-svc running on port ${PORT} (artificial delay: ${delayMs}ms)`)
 );
