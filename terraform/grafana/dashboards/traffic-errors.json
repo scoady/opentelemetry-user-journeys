@@ -1,0 +1,214 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus (Mimir)",
+      "description": "Grafana Cloud Prometheus / Mimir",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__requires": [
+    { "type": "grafana",    "id": "grafana",    "name": "Grafana",     "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus",  "version": "1.0.0"  },
+    { "type": "panel",      "id": "stat",       "name": "Stat",        "version": ""       },
+    { "type": "panel",      "id": "timeseries", "name": "Time series", "version": ""       },
+    { "type": "panel",      "id": "piechart",   "name": "Pie chart",   "version": ""       }
+  ],
+  "title": "TechMart — Traffic & Error Patterns",
+  "description": "Traffic distribution across CUJs, error patterns, and throughput trends.",
+  "uid": "techmart-traffic-errors",
+  "version": 1,
+  "schemaVersion": 38,
+  "tags": ["techmart", "traffic", "errors"],
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "pluginId": "prometheus",
+        "label": "Datasource",
+        "hide": 0,
+        "current": {}
+      }
+    ]
+  },
+  "panels": [
+
+    {
+      "type": "stat", "id": 1, "title": "Total RPS",
+      "description": "Current platform-wide request rate across all CUJs.",
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "sum(rate(techmart_calls_total{span_name=~\"cuj.*\"}[5m]))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "decimals": 2 } }
+    },
+
+    {
+      "type": "stat", "id": 2, "title": "Total Errors (1h)",
+      "description": "Error count across all CUJs in the last hour.",
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "sum(increase(techmart_calls_total{span_name=~\"cuj.*\", status_code=\"STATUS_CODE_ERROR\"}[1h]))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short", "decimals": 0,
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "red",   "value": 1    }
+          ]}
+        }
+      }
+    },
+
+    {
+      "type": "stat", "id": 3, "title": "Error Rate %",
+      "description": "Current error rate across all CUJs.",
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "100 * sum(rate(techmart_calls_total{span_name=~\"cuj.*\", status_code=\"STATUS_CODE_ERROR\"}[5m])) / sum(rate(techmart_calls_total{span_name=~\"cuj.*\"}[5m]))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "decimals": 3,
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green",  "value": null },
+            { "color": "yellow", "value": 0.05 },
+            { "color": "red",    "value": 0.1  }
+          ]}
+        }
+      }
+    },
+
+    {
+      "type": "row", "id": 4, "title": "Traffic Distribution",
+      "gridPos": { "x": 0, "y": 4, "w": 24, "h": 1 },
+      "collapsed": false, "panels": []
+    },
+
+    {
+      "type": "timeseries", "id": 5, "title": "Request Rate by CUJ",
+      "description": "Stacked area showing the traffic mix across all CUJs over time.",
+      "gridPos": { "x": 0, "y": 5, "w": 16, "h": 10 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "sum by (span_name) (rate(techmart_calls_total{span_name=~\"cuj.*\"}[5m]))",
+        "legendFormat": "{{span_name}}"
+      }],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "lineWidth": 1, "fillOpacity": 40, "stacking": { "mode": "normal" } } }
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean"] } }
+    },
+
+    {
+      "type": "piechart", "id": 6, "title": "Traffic Mix (1h)",
+      "description": "Percentage of total traffic per CUJ.",
+      "gridPos": { "x": 16, "y": 5, "w": 8, "h": 10 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "sum by (span_name) (increase(techmart_calls_total{span_name=~\"cuj.*\"}[1h]))",
+        "legendFormat": "{{span_name}}"
+      }],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "pieType": "donut",
+        "legend": { "displayMode": "table", "placement": "right", "values": ["percent"] },
+        "tooltip": { "mode": "single" }
+      },
+      "fieldConfig": { "defaults": {} }
+    },
+
+    {
+      "type": "row", "id": 7, "title": "Error Patterns",
+      "gridPos": { "x": 0, "y": 15, "w": 24, "h": 1 },
+      "collapsed": false, "panels": []
+    },
+
+    {
+      "type": "timeseries", "id": 8, "title": "Error Rate by CUJ",
+      "description": "Error rate per CUJ over time. Dashed red line = 0.1% SLO budget threshold.",
+      "gridPos": { "x": 0, "y": 16, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "100 * sum by (span_name) (rate(techmart_calls_total{span_name=~\"cuj.*\", status_code=\"STATUS_CODE_ERROR\"}[5m])) / sum by (span_name) (rate(techmart_calls_total{span_name=~\"cuj.*\"}[5m]))",
+          "legendFormat": "{{span_name}}"
+        },
+        { "expr": "vector(0.1)", "legendFormat": "SLO budget (0.1%)" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "custom": { "lineWidth": 2, "fillOpacity": 0 } },
+        "overrides": [{
+          "matcher": { "id": "byName", "options": "SLO budget (0.1%)" },
+          "properties": [
+            { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } },
+            { "id": "custom.lineStyle", "value": { "fill": "dash" } }
+          ]
+        }]
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] } }
+    },
+
+    {
+      "type": "timeseries", "id": 9, "title": "Error Count by CUJ",
+      "description": "Absolute error counts per CUJ — stacked to show which CUJ contributes most errors.",
+      "gridPos": { "x": 0, "y": 24, "w": 14, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "sum by (span_name) (increase(techmart_calls_total{span_name=~\"cuj.*\", status_code=\"STATUS_CODE_ERROR\"}[5m]))",
+        "legendFormat": "{{span_name}}"
+      }],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "lineWidth": 0, "fillOpacity": 80, "stacking": { "mode": "normal" }, "drawStyle": "bars" } }
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+
+    {
+      "type": "timeseries", "id": 10, "title": "Success vs Error — All CUJs",
+      "description": "Overall platform split between successful and failed requests.",
+      "gridPos": { "x": 14, "y": 24, "w": 10, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "sum(rate(techmart_calls_total{span_name=~\"cuj.*\", status_code!=\"STATUS_CODE_ERROR\"}[5m]))",
+          "legendFormat": "success"
+        },
+        {
+          "expr": "sum(rate(techmart_calls_total{span_name=~\"cuj.*\", status_code=\"STATUS_CODE_ERROR\"}[5m]))",
+          "legendFormat": "error"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "lineWidth": 1, "fillOpacity": 30, "stacking": { "mode": "normal" } } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "success" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "error" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }]
+          }
+        ]
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    }
+
+  ]
+}

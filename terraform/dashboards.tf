@@ -47,3 +47,27 @@ resource "grafana_dashboard" "observability_guide" {
   config_json = file("${path.module}/grafana/dashboards/observability-guide.json")
   overwrite   = true
 }
+
+resource "grafana_dashboard" "executive_summary" {
+  folder      = grafana_folder.techmart.uid
+  config_json = file("${path.module}/grafana/dashboards/executive-summary.json")
+  overwrite   = true
+}
+
+resource "grafana_dashboard" "cuj_deep_dive" {
+  folder      = grafana_folder.techmart.uid
+  config_json = file("${path.module}/grafana/dashboards/cuj-deep-dive.json")
+  overwrite   = true
+}
+
+resource "grafana_dashboard" "latency_analysis" {
+  folder      = grafana_folder.techmart.uid
+  config_json = file("${path.module}/grafana/dashboards/latency-analysis.json")
+  overwrite   = true
+}
+
+resource "grafana_dashboard" "traffic_errors" {
+  folder      = grafana_folder.techmart.uid
+  config_json = file("${path.module}/grafana/dashboards/traffic-errors.json")
+  overwrite   = true
+}

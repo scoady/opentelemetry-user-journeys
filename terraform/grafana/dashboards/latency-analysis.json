@@ -1,0 +1,218 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus (Mimir)",
+      "description": "Grafana Cloud Prometheus / Mimir",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__requires": [
+    { "type": "grafana",    "id": "grafana",    "name": "Grafana",     "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus",  "version": "1.0.0"  },
+    { "type": "panel",      "id": "stat",       "name": "Stat",        "version": ""       },
+    { "type": "panel",      "id": "bargauge",   "name": "Bar gauge",   "version": ""       },
+    { "type": "panel",      "id": "timeseries", "name": "Time series", "version": ""       },
+    { "type": "panel",      "id": "heatmap",    "name": "Heatmap",     "version": ""       },
+    { "type": "panel",      "id": "barchart",   "name": "Bar chart",   "version": ""       }
+  ],
+  "title": "TechMart — Latency Analysis",
+  "description": "Deep dive into latency distribution using histogram data from the spanmetrics connector. Heatmaps, percentile comparisons, and bucket breakdowns.",
+  "uid": "techmart-latency-analysis",
+  "version": 1,
+  "schemaVersion": 38,
+  "tags": ["techmart", "latency", "histogram"],
+  "time": { "from": "now-1h", "to": "now" },
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "pluginId": "prometheus",
+        "label": "Datasource",
+        "hide": 0,
+        "current": {}
+      },
+      {
+        "name": "cuj",
+        "type": "custom",
+        "label": "CUJ",
+        "query": "checkout,product-discovery,product-search,product-review,order-lookup,order-history,product-upload,product-upload-job",
+        "options": [
+          { "text": "checkout",           "value": "checkout",           "selected": true  },
+          { "text": "product-discovery",  "value": "product-discovery",  "selected": false },
+          { "text": "product-search",     "value": "product-search",     "selected": false },
+          { "text": "product-review",     "value": "product-review",     "selected": false },
+          { "text": "order-lookup",       "value": "order-lookup",       "selected": false },
+          { "text": "order-history",      "value": "order-history",      "selected": false },
+          { "text": "product-upload",     "value": "product-upload",     "selected": false },
+          { "text": "product-upload-job", "value": "product-upload-job", "selected": false }
+        ],
+        "current": { "text": "checkout", "value": "checkout" },
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+
+    {
+      "type": "row", "id": 1, "title": "All CUJs — Latency Comparison",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false, "panels": []
+    },
+
+    {
+      "type": "stat", "id": 2, "title": "Selected CUJ p99",
+      "gridPos": { "x": 0, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[5m])) by (le))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms", "decimals": 0,
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green",  "value": null },
+            { "color": "yellow", "value": 500  },
+            { "color": "red",    "value": 2000 }
+          ]}
+        }
+      }
+    },
+
+    {
+      "type": "stat", "id": 3, "title": "Selected CUJ p50",
+      "gridPos": { "x": 4, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "histogram_quantile(0.50, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[5m])) by (le))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "unit": "ms", "decimals": 0 } }
+    },
+
+    {
+      "type": "bargauge", "id": 4, "title": "p50 Latency — All CUJs",
+      "description": "Median latency comparison across all CUJs.",
+      "gridPos": { "x": 8, "y": 1, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "histogram_quantile(0.5, sum(rate(techmart_duration_milliseconds_bucket{span_name=~\"cuj.*\"}[5m])) by (span_name, le))",
+        "legendFormat": "{{span_name}}"
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal", "displayMode": "gradient", "showUnfilled": true },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green",  "value": null },
+            { "color": "yellow", "value": 200  },
+            { "color": "red",    "value": 1000 }
+          ]}
+        }
+      }
+    },
+
+    {
+      "type": "bargauge", "id": 5, "title": "p99 Latency — All CUJs",
+      "description": "Tail latency comparison across all CUJs.",
+      "gridPos": { "x": 16, "y": 1, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=~\"cuj.*\"}[5m])) by (span_name, le))",
+        "legendFormat": "{{span_name}}"
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal", "displayMode": "gradient", "showUnfilled": true },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green",  "value": null },
+            { "color": "yellow", "value": 500  },
+            { "color": "red",    "value": 2000 }
+          ]}
+        }
+      }
+    },
+
+    {
+      "type": "timeseries", "id": 6, "title": "Percentile Trend — ${cuj}",
+      "description": "p50 / p95 / p99 latency over time for the selected CUJ.",
+      "gridPos": { "x": 0, "y": 5, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "custom": { "lineWidth": 2, "fillOpacity": 5 } }
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+
+    {
+      "type": "row", "id": 10, "title": "Histogram Distribution — ${cuj}",
+      "gridPos": { "x": 0, "y": 9, "w": 24, "h": 1 },
+      "collapsed": false, "panels": []
+    },
+
+    {
+      "type": "heatmap", "id": 11, "title": "Latency Heatmap — ${cuj}",
+      "description": "Heatmap of request latency distribution over time. Brighter = more requests at that latency.",
+      "gridPos": { "x": 0, "y": 10, "w": 24, "h": 10 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "sum(increase(techmart_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[$__rate_interval])) by (le)",
+        "legendFormat": "{{le}}",
+        "format": "heatmap"
+      }],
+      "options": {
+        "calculate": false,
+        "color": {
+          "mode": "scheme",
+          "scheme": "Oranges",
+          "steps": 128
+        },
+        "yAxis": {
+          "unit": "ms"
+        },
+        "cellGap": 1,
+        "tooltip": { "show": true, "yHistogram": true },
+        "legend": { "show": true }
+      },
+      "fieldConfig": { "defaults": { "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } } } }
+    },
+
+    {
+      "type": "timeseries", "id": 12, "title": "p99 Comparison — All CUJs",
+      "description": "p99 latency for every CUJ overlaid on one chart.",
+      "gridPos": { "x": 0, "y": 20, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=~\"cuj.*\"}[5m])) by (span_name, le))",
+        "legendFormat": "{{span_name}}"
+      }],
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "custom": { "lineWidth": 2, "fillOpacity": 0 } }
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max", "lastNotNull"] } }
+    }
+
+  ]
+}
