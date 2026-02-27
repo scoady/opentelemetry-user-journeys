@@ -15,3 +15,4 @@ spec:
       targetPort: 9092
       name: plaintext
   clusterIP: None
+  publishNotReadyAddresses: true

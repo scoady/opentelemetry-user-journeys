@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "techmart.labels" . | nindent 4 }}
+    app: kafka
+    app.kubernetes.io/component: kafka
+data:
+  server.properties: |
+    # KRaft mode — single combined broker+controller
+    process.roles=broker,controller
+    node.id=1
+    controller.quorum.voters=1@localhost:9093
+
+    # Listeners
+    listeners=PLAINTEXT://:9092,CONTROLLER://:9093
+    advertised.listeners=PLAINTEXT://kafka:9092
+    controller.listener.names=CONTROLLER
+    inter.broker.listener.name=PLAINTEXT
+    listener.security.protocol.map=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+
+    # Storage
+    log.dirs=/var/kafka-data/kraft-combined-logs
+    num.partitions=1
+
+    # Replication (single-broker demo)
+    offsets.topic.replication.factor=1
+    transaction.state.log.replication.factor=1
+    transaction.state.log.min.isr=1
+
+    # Topics
+    auto.create.topics.enable=true
+
+    # Retention
+    log.retention.hours=168
+    log.segment.bytes=1073741824
