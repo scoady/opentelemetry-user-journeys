@@ -10,6 +10,7 @@ output "dashboard_urls" {
     checkout_slo       = "${trimsuffix(var.grafana_url, "/")}/d/${jsondecode(file("${path.module}/grafana/dashboards/checkout-slo.json")).uid}"
     checkout_breakdown = "${trimsuffix(var.grafana_url, "/")}/d/${jsondecode(file("${path.module}/grafana/dashboards/checkout-breakdown.json")).uid}"
     cuj_slo            = "${trimsuffix(var.grafana_url, "/")}/d/${jsondecode(file("${path.module}/grafana/dashboards/cuj-slo.json")).uid}"
-    job_lifecycle      = "${trimsuffix(var.grafana_url, "/")}/d/${jsondecode(file("${path.module}/grafana/dashboards/job-lifecycle.json")).uid}"
+    job_lifecycle       = "${trimsuffix(var.grafana_url, "/")}/d/${jsondecode(file("${path.module}/grafana/dashboards/job-lifecycle.json")).uid}"
+    observability_guide = "${trimsuffix(var.grafana_url, "/")}/d/${jsondecode(file("${path.module}/grafana/dashboards/observability-guide.json")).uid}"
   }
 }

@@ -41,3 +41,9 @@ resource "grafana_dashboard" "job_lifecycle" {
   config_json = file("${path.module}/grafana/dashboards/job-lifecycle.json")
   overwrite   = true
 }
+
+resource "grafana_dashboard" "observability_guide" {
+  folder      = grafana_folder.techmart.uid
+  config_json = file("${path.module}/grafana/dashboards/observability-guide.json")
+  overwrite   = true
+}
