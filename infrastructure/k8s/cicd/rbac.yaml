@@ -39,6 +39,11 @@ rules:
   - apiGroups: ["opentelemetry.io"]
     resources: ["*"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Terraform state locking (backend "kubernetes" uses Lease objects)
+  - apiGroups: ["coordination.k8s.io"]
+    resources:
+      - leases
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
