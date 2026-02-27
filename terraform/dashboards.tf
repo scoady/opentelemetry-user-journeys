@@ -35,3 +35,9 @@ resource "grafana_dashboard" "cuj_slo" {
   config_json = file("${path.module}/grafana/dashboards/cuj-slo.json")
   overwrite   = true
 }
+
+resource "grafana_dashboard" "job_lifecycle" {
+  folder      = grafana_folder.techmart.uid
+  config_json = file("${path.module}/grafana/dashboards/job-lifecycle.json")
+  overwrite   = true
+}
