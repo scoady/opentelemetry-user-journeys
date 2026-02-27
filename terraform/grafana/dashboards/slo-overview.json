@@ -516,6 +516,170 @@
         }]
       },
       "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+
+    { "type": "row", "title": "Product Upload", "id": 60,
+      "collapsed": false, "gridPos": { "x": 0, "y": 30, "w": 24, "h": 1 } },
+
+    {
+      "type": "stat", "id": 61, "title": "Success Rate (1h)",
+      "gridPos": { "x": 0, "y": 31, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.product-upload\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(techmart_calls_total{span_name=\"cuj.product-upload\"}[1h]))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "decimals": 2, "min": 95, "max": 100,
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "red",    "value": null  },
+            { "color": "yellow", "value": 99    },
+            { "color": "green",  "value": 99.9  }
+          ]}
+        }
+      }
+    },
+
+    {
+      "type": "stat", "id": 62, "title": "p99 Latency",
+      "gridPos": { "x": 4, "y": 31, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload\"}[5m])) by (le))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green",  "value": null },
+            { "color": "yellow", "value": 500  },
+            { "color": "red",    "value": 2000 }
+          ]}
+        }
+      }
+    },
+
+    {
+      "type": "stat", "id": 63, "title": "Request Rate",
+      "gridPos": { "x": 8, "y": 31, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.product-upload\"}[5m]))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "fixed", "fixedColor": "blue" } } }
+    },
+
+    {
+      "type": "timeseries", "id": 64, "title": "Error Rate vs SLO Target (0.1%)",
+      "gridPos": { "x": 12, "y": 31, "w": 12, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "100 * sum(rate(techmart_calls_total{span_name=\"cuj.product-upload\", status_code=\"STATUS_CODE_ERROR\"}[5m])) / sum(rate(techmart_calls_total{span_name=\"cuj.product-upload\"}[5m]))",
+          "legendFormat": "error rate %"
+        },
+        { "expr": "vector(0.1)", "legendFormat": "SLO target (0.1%)" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "custom": { "lineWidth": 2, "fillOpacity": 10 } },
+        "overrides": [{
+          "matcher": { "id": "byName", "options": "SLO target (0.1%)" },
+          "properties": [
+            { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } },
+            { "id": "custom.lineStyle", "value": { "fill": "dash" } },
+            { "id": "custom.fillOpacity", "value": 0 }
+          ]
+        }]
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+
+    { "type": "row", "title": "Product Upload Job", "id": 70,
+      "collapsed": false, "gridPos": { "x": 0, "y": 35, "w": 24, "h": 1 } },
+
+    {
+      "type": "stat", "id": 71, "title": "Success Rate (1h)",
+      "gridPos": { "x": 0, "y": 36, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.product-upload-job\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(techmart_calls_total{span_name=\"cuj.product-upload-job\"}[1h]))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "decimals": 2, "min": 95, "max": 100,
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "red",    "value": null  },
+            { "color": "yellow", "value": 99    },
+            { "color": "green",  "value": 99.9  }
+          ]}
+        }
+      }
+    },
+
+    {
+      "type": "stat", "id": 72, "title": "p99 Latency",
+      "gridPos": { "x": 4, "y": 36, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload-job\"}[5m])) by (le))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green",  "value": null },
+            { "color": "yellow", "value": 500  },
+            { "color": "red",    "value": 2000 }
+          ]}
+        }
+      }
+    },
+
+    {
+      "type": "stat", "id": 73, "title": "Request Rate",
+      "gridPos": { "x": 8, "y": 36, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{
+        "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.product-upload-job\"}[5m]))",
+        "legendFormat": ""
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "fixed", "fixedColor": "blue" } } }
+    },
+
+    {
+      "type": "timeseries", "id": 74, "title": "Error Rate vs SLO Target (0.1%)",
+      "gridPos": { "x": 12, "y": 36, "w": 12, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "100 * sum(rate(techmart_calls_total{span_name=\"cuj.product-upload-job\", status_code=\"STATUS_CODE_ERROR\"}[5m])) / sum(rate(techmart_calls_total{span_name=\"cuj.product-upload-job\"}[5m]))",
+          "legendFormat": "error rate %"
+        },
+        { "expr": "vector(0.1)", "legendFormat": "SLO target (0.1%)" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "custom": { "lineWidth": 2, "fillOpacity": 10 } },
+        "overrides": [{
+          "matcher": { "id": "byName", "options": "SLO target (0.1%)" },
+          "properties": [
+            { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } },
+            { "id": "custom.lineStyle", "value": { "fill": "dash" } },
+            { "id": "custom.fillOpacity", "value": 0 }
+          ]
+        }]
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
     }
 
   ]

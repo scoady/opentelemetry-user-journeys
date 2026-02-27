@@ -98,3 +98,17 @@ INSERT INTO reviews (product_id, rating, reviewer_name, comment) VALUES
 
 -- Order history index
 CREATE INDEX IF NOT EXISTS idx_orders_customer_email ON orders(customer_email);
+
+-- Upload jobs (async product batch import via Kafka)
+CREATE TABLE IF NOT EXISTS upload_jobs (
+    id SERIAL PRIMARY KEY,
+    status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    total_products INTEGER NOT NULL DEFAULT 0,
+    processed_count INTEGER NOT NULL DEFAULT 0,
+    error_message TEXT,
+    trace_id VARCHAR(64),
+    created_at TIMESTAMP DEFAULT NOW(),
+    completed_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_upload_jobs_status ON upload_jobs(status);

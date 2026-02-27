@@ -107,6 +107,27 @@ pipeline {
           }
         }
 
+        stage('product-worker') {
+          agent { label 'kaniko' }
+          steps {
+            container('kaniko') {
+              sh """
+                /kaniko/executor \\
+                  --dockerfile=${WORKSPACE}/product-worker/Dockerfile \\
+                  --context=dir://${WORKSPACE}/product-worker \\
+                  --destination=${REGISTRY}/webstore/product-worker:${IMAGE_TAG} \\
+                  --destination=${REGISTRY}/webstore/product-worker:latest \\
+                  --insecure \\
+                  --insecure-pull \\
+                  --skip-tls-verify \\
+                  --skip-tls-verify-pull \\
+                  --cache=false \\
+                  --verbosity=info
+              """
+            }
+          }
+        }
+
       } // end parallel
     }
 

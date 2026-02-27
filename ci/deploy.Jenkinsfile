@@ -65,6 +65,9 @@ pipeline {
               --set frontend.image.repository=webstore/frontend \\
               --set frontend.image.tag=${params.IMAGE_TAG} \\
               --set frontend.image.pullPolicy=Always \\
+              --set productWorker.image.repository=webstore/product-worker \\
+              --set productWorker.image.tag=${params.IMAGE_TAG} \\
+              --set productWorker.image.pullPolicy=Always \\
               --wait \\
               --timeout 5m
           """
@@ -78,7 +81,8 @@ pipeline {
           sh """
             kubectl rollout status deployment/api           -n webstore --timeout=120s
             kubectl rollout status deployment/inventory-svc -n webstore --timeout=120s
-            kubectl rollout status deployment/frontend      -n webstore --timeout=120s
+            kubectl rollout status deployment/frontend       -n webstore --timeout=120s
+            kubectl rollout status deployment/product-worker -n webstore --timeout=120s
           """
         }
       }

@@ -761,3 +761,135 @@ body {
   color: var(--gray-400);
   margin-top: 0.25rem;
 }
+
+/* ── Admin ─────────────────────────────────────────────────────────────────── */
+.admin-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.admin-card {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.admin-section { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.admin-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin: 0;
+}
+
+.admin-controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.admin-controls label {
+  font-size: 0.9rem;
+  color: var(--gray-600);
+}
+
+.admin-controls input[type="number"] {
+  width: 80px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.95rem;
+}
+
+.admin-json {
+  width: 100%;
+  min-height: 200px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 0.8rem;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.8rem;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.admin-json:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.admin-hint {
+  font-size: 0.85rem;
+  color: var(--gray-400);
+  margin: 0;
+}
+
+.admin-upload-btn {
+  align-self: flex-start;
+  padding: 0.7rem 1.5rem;
+  font-size: 1rem;
+}
+
+.job-status-panel {
+  background: var(--gray-50);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.job-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.job-status-row span:first-child {
+  color: var(--gray-500);
+  font-weight: 500;
+}
+
+.job-status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.job-status-pending { background: #fef9c3; color: #a16207; }
+.job-status-processing { background: #dbeafe; color: #1d4ed8; }
+.job-status-completed { background: #dcfce7; color: #15803d; }
+.job-status-failed { background: #fef2f2; color: #dc2626; }
+
+.trace-link {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.75rem;
+  color: var(--primary);
+  word-break: break-all;
+  background: white;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+.error-text {
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+
+.job-success {
+  color: var(--success);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0.5rem 0 0;
+}

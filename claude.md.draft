@@ -13,8 +13,10 @@ TechMart is a 3-tier web store (React frontend, Node.js API, PostgreSQL) running
 
 ```
 [React Frontend :5173] → [nginx /api/ proxy] → [Express API :3001] → [PostgreSQL :5432]
-                                                        ↓
-                                              [inventory-svc :3002]
+                                                    ↓           ↓
+                                          [inventory-svc :3002] [Kafka :9092]
+                                                                     ↓
+                                                           [product-worker]
 ```
 
 All services run in the `webstore` namespace. The OTel collector runs in `observability`, shipping traces to Tempo and spanmetrics to Mimir.
@@ -29,6 +31,8 @@ All services run in the `webstore` namespace. The OTel collector runs in `observ
 | `product-search` | `GET /api/products/search` | 99.9% | p99 < 500ms |
 | `product-review` | `GET/POST /api/products/:id/reviews` | 99.9% | p99 < 1s |
 | `order-history` | `GET /api/orders?email=` | 99.9% | p99 < 1s |
+| `product-upload` | `POST /api/admin/upload-products` | 99.9% | p99 < 2s |
+| `product-upload-job` | Kafka consumer → batch INSERT | 99.9% | p99 < 10s |
 
 ## Key Directories
 
@@ -37,6 +41,7 @@ api/src/                    Express API server
   routes/products.js        product-discovery + product-search CUJs
   routes/orders.js          checkout + order-lookup + order-history CUJs
   routes/reviews.js         product-review CUJ
+  routes/admin.js           product-upload CUJ (Kafka producer)
   tracing.js                withJourney() + cujBaggageMiddleware
   db.js                     pg Pool connection
 
@@ -44,11 +49,16 @@ frontend/src/               React/Vite frontend
   components/ProductGrid.jsx  Product catalog + search
   components/ReviewSection.jsx  Reviews modal
   components/OrderHistory.jsx   Order lookup by email
-  App.jsx                   View routing (catalog/checkout/confirmation/orders)
+  components/Admin.jsx          Bulk product upload + job status
+  App.jsx                   View routing (catalog/checkout/confirmation/orders/admin)
 
 inventory-svc/src/          Stock reservation microservice
   index.js                  POST /reserve endpoint
   tracing.js                cujBaggageMiddleware (downstream)
+
+product-worker/src/         Async product upload worker (Kafka consumer)
+  index.js                  Consumes product-uploads topic, batch INSERTs
+  tracing.js                withJourney('product-upload-job')
 
 database/init.sql           Canonical schema + seed data + indexes
 infrastructure/
@@ -59,7 +69,7 @@ infrastructure/
   k8s/telemetry/            OTel collector CR
 
 terraform/
-  slos.tf                   12 grafana_slo resources (2 per CUJ)
+  slos.tf                   16 grafana_slo resources (2 per CUJ)
   dashboards.tf             Dashboard resources
   grafana/dashboards/       JSON dashboard definitions
     slo-overview.json       Per-CUJ success rate, latency, error rate
@@ -161,12 +171,31 @@ Both include `alerting {}` blocks for fastburn (14.4x) and slowburn (6x) alert r
 
 Dashboard panels use `"uid": "${datasource}"` template variable — never hardcoded datasource UIDs.
 
+## Job Observability (Async via Kafka)
+
+The `product-upload` CUJ demonstrates async job observability:
+
+```
+Admin UI → POST /api/admin/upload-products → [API: create job, produce to Kafka]
+                                                    ↓
+                                              [Kafka: product-uploads topic]
+                                                    ↓
+                                              [product-worker: consume → batch INSERT → update job status]
+                                                    ↓
+                                              [Admin UI polls GET /api/admin/jobs/:id]
+```
+
+**Trace propagation**: Parent-child through Kafka message headers (auto-instrumented by `@opentelemetry/instrumentation-kafkajs`). Single trace shows HTTP → Kafka produce → Kafka consume → DB batch INSERT.
+
+**Job lifecycle**: pending → processing → completed/failed. `trace_id` stored in `upload_jobs` table for Tempo lookup.
+
 ## Key Conventions
 
 - **imagePullPolicy: Never** + `kind load docker-image` for local images
 - **In-cluster registry**: `registry.registry.svc.cluster.local:5000` (plain HTTP, containerd patched)
 - **Frontend proxy**: nginx proxies `/api/` → `http://api:3001` (avoids ingress routing race)
 - **Cache-Control: no-store** on all API responses
+- **Kafka**: Bitnami KRaft mode (no Zookeeper), auto-create topics, headless service
 - **App namespace**: `webstore`
 - **Observability namespace**: `observability`
 - **Grafana Cloud secret**: `otel-vendor-credentials` in `observability` ns (never committed)

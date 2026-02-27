@@ -18,6 +18,7 @@ app.use(cujBaggageMiddleware);
 app.use('/api/products', require('./routes/products'));
 app.use('/api/products/:productId/reviews', require('./routes/reviews'));
 app.use('/api/orders', require('./routes/orders'));
+app.use('/api/admin', require('./routes/admin'));
 
 // Health check
 app.get('/api/health', async (req, res) => {

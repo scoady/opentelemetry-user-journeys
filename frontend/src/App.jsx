@@ -5,8 +5,9 @@ import Cart from './components/Cart';
 import CheckoutForm from './components/CheckoutForm';
 import OrderConfirmation from './components/OrderConfirmation';
 import OrderHistory from './components/OrderHistory';
+import Admin from './components/Admin';
 
-// Views: 'catalog' | 'checkout' | 'confirmation' | 'orders'
+// Views: 'catalog' | 'checkout' | 'confirmation' | 'orders' | 'admin'
 export default function App() {
   const [view, setView] = useState('catalog');
   const [cart, setCart] = useState([]);
@@ -56,6 +57,7 @@ export default function App() {
         onCartOpen={() => setCartOpen(true)}
         onLogoClick={handleContinueShopping}
         onOrderHistory={() => setView('orders')}
+        onAdmin={() => setView('admin')}
       />
 
       <main className="main">
@@ -77,6 +79,9 @@ export default function App() {
         )}
         {view === 'orders' && (
           <OrderHistory onBack={handleContinueShopping} />
+        )}
+        {view === 'admin' && (
+          <Admin onBack={handleContinueShopping} />
         )}
       </main>
 

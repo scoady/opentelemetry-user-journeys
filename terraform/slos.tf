@@ -1,16 +1,18 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # TechMart Grafana SLOs
 #
-# 12 SLOs — availability + latency for each Critical User Journey:
+# 16 SLOs — availability + latency for each Critical User Journey:
 #
 #   CUJ                  Availability SLO   Latency SLO
 #   ─────────────────    ────────────────   ──────────────────
-#   checkout             99.9 % success     p99 < 2 s   (le="2000" bucket)
-#   product-discovery    99.9 % success     p99 < 1 s   (le="1000" bucket)
-#   order-lookup         99.9 % success     p99 < 1 s   (le="1000" bucket)
-#   product-search       99.9 % success     p99 < 500ms (le="500" bucket)
-#   product-review       99.9 % success     p99 < 1 s   (le="1000" bucket)
-#   order-history        99.9 % success     p99 < 1 s   (le="1000" bucket)
+#   checkout             99.9 % success     p99 < 2 s    (le="2000" bucket)
+#   product-discovery    99.9 % success     p99 < 1 s    (le="1000" bucket)
+#   order-lookup         99.9 % success     p99 < 1 s    (le="1000" bucket)
+#   product-search       99.9 % success     p99 < 500ms  (le="500" bucket)
+#   product-review       99.9 % success     p99 < 1 s    (le="1000" bucket)
+#   order-history        99.9 % success     p99 < 1 s    (le="1000" bucket)
+#   product-upload       99.9 % success     p99 < 2 s    (le="2000" bucket)
+#   product-upload-job   99.9 % success     p99 < 10 s   (le="10000" bucket)
 #
 # Availability uses the native "ratio" query type (good/total counters).
 # Latency uses "freeform" with a histogram bucket fraction — the spanmetrics
@@ -785,6 +787,260 @@ resource "grafana_slo" "order_history_latency" {
       annotation {
         key   = "description"
         value = "Order history p99 latency SLO burning >6× rate. Check customer_email index and JOIN performance."
+      }
+    }
+  }
+}
+
+# ── Product Upload (async via Kafka) ──────────────────────────────────────────
+
+resource "grafana_slo" "product_upload_availability" {
+  name        = "Product Upload — Availability"
+  description = "99.9 % of cuj.product-upload spans must succeed. Covers POST /api/admin/upload-products (API-side: job creation + Kafka produce)."
+  folder_uid  = grafana_folder.techmart.uid
+
+  destination_datasource {
+    uid = local.prom_uid
+  }
+
+  query {
+    type = "ratio"
+    ratio {
+      success_metric = "techmart_calls_total{span_name=\"cuj.product-upload\", status_code!=\"STATUS_CODE_ERROR\"}"
+      total_metric   = "techmart_calls_total{span_name=\"cuj.product-upload\"}"
+    }
+  }
+
+  objectives {
+    value  = 0.999
+    window = "30d"
+  }
+
+  label {
+    key   = "cuj"
+    value = "product-upload"
+  }
+  label {
+    key   = "slo_type"
+    value = "availability"
+  }
+
+  alerting {
+    fastburn {
+      label {
+        key   = "severity"
+        value = "critical"
+      }
+      annotation {
+        key   = "name"
+        value = "Product Upload Availability — Fast Burn"
+      }
+      annotation {
+        key   = "description"
+        value = "Product upload error budget burning >14.4× rate. Admin bulk uploads are failing at the API/Kafka produce stage."
+      }
+    }
+    slowburn {
+      label {
+        key   = "severity"
+        value = "warning"
+      }
+      annotation {
+        key   = "name"
+        value = "Product Upload Availability — Slow Burn"
+      }
+      annotation {
+        key   = "description"
+        value = "Product upload error budget burning >6× rate. Check Kafka broker connectivity and upload_jobs table."
+      }
+    }
+  }
+}
+
+resource "grafana_slo" "product_upload_latency" {
+  name        = "Product Upload — Latency p99 < 2 s"
+  description = "99.9 % of cuj.product-upload requests must complete within 2000 ms. Covers job creation + Kafka produce. Measured via the le=2000 histogram bucket."
+  folder_uid  = grafana_folder.techmart.uid
+
+  destination_datasource {
+    uid = local.prom_uid
+  }
+
+  query {
+    type = "freeform"
+    freeform {
+      query = "sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload\", le=\"2000\"}[$__rate_interval])) / sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload\", le=\"+Inf\"}[$__rate_interval]))"
+    }
+  }
+
+  objectives {
+    value  = 0.999
+    window = "30d"
+  }
+
+  label {
+    key   = "cuj"
+    value = "product-upload"
+  }
+  label {
+    key   = "slo_type"
+    value = "latency"
+  }
+
+  alerting {
+    fastburn {
+      label {
+        key   = "severity"
+        value = "critical"
+      }
+      annotation {
+        key   = "name"
+        value = "Product Upload Latency — Fast Burn"
+      }
+      annotation {
+        key   = "description"
+        value = "Product upload p99 latency SLO burning >14.4× rate. More than 0.1 % of uploads exceeding 2 s. Check Kafka broker health and DB write performance."
+      }
+    }
+    slowburn {
+      label {
+        key   = "severity"
+        value = "warning"
+      }
+      annotation {
+        key   = "name"
+        value = "Product Upload Latency — Slow Burn"
+      }
+      annotation {
+        key   = "description"
+        value = "Product upload p99 latency SLO burning >6× rate. Review Kafka produce latency and upload_jobs INSERT times."
+      }
+    }
+  }
+}
+
+# ── Product Upload Job (Kafka consumer processing) ───────────────────────────
+
+resource "grafana_slo" "product_upload_job_availability" {
+  name        = "Product Upload Job — Availability"
+  description = "99.9 % of cuj.product-upload-job spans must succeed. Covers Kafka consume → batch INSERT → job status update in the product-worker service."
+  folder_uid  = grafana_folder.techmart.uid
+
+  destination_datasource {
+    uid = local.prom_uid
+  }
+
+  query {
+    type = "ratio"
+    ratio {
+      success_metric = "techmart_calls_total{span_name=\"cuj.product-upload-job\", status_code!=\"STATUS_CODE_ERROR\"}"
+      total_metric   = "techmart_calls_total{span_name=\"cuj.product-upload-job\"}"
+    }
+  }
+
+  objectives {
+    value  = 0.999
+    window = "30d"
+  }
+
+  label {
+    key   = "cuj"
+    value = "product-upload-job"
+  }
+  label {
+    key   = "slo_type"
+    value = "availability"
+  }
+
+  alerting {
+    fastburn {
+      label {
+        key   = "severity"
+        value = "critical"
+      }
+      annotation {
+        key   = "name"
+        value = "Product Upload Job Availability — Fast Burn"
+      }
+      annotation {
+        key   = "description"
+        value = "Product upload job error budget burning >14.4× rate. Kafka consumer is failing to process batch inserts."
+      }
+    }
+    slowburn {
+      label {
+        key   = "severity"
+        value = "warning"
+      }
+      annotation {
+        key   = "name"
+        value = "Product Upload Job Availability — Slow Burn"
+      }
+      annotation {
+        key   = "description"
+        value = "Product upload job error budget burning >6× rate. Check product-worker logs and DB connectivity."
+      }
+    }
+  }
+}
+
+resource "grafana_slo" "product_upload_job_latency" {
+  name        = "Product Upload Job — Latency p99 < 10 s"
+  description = "99.9 % of cuj.product-upload-job requests must complete within 10000 ms. Covers Kafka consume through batch INSERT of products. Measured via the le=10000 histogram bucket."
+  folder_uid  = grafana_folder.techmart.uid
+
+  destination_datasource {
+    uid = local.prom_uid
+  }
+
+  query {
+    type = "freeform"
+    freeform {
+      query = "sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload-job\", le=\"10000\"}[$__rate_interval])) / sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload-job\", le=\"+Inf\"}[$__rate_interval]))"
+    }
+  }
+
+  objectives {
+    value  = 0.999
+    window = "30d"
+  }
+
+  label {
+    key   = "cuj"
+    value = "product-upload-job"
+  }
+  label {
+    key   = "slo_type"
+    value = "latency"
+  }
+
+  alerting {
+    fastburn {
+      label {
+        key   = "severity"
+        value = "critical"
+      }
+      annotation {
+        key   = "name"
+        value = "Product Upload Job Latency — Fast Burn"
+      }
+      annotation {
+        key   = "description"
+        value = "Product upload job p99 latency SLO burning >14.4× rate. More than 0.1 % of batch inserts exceeding 10 s. Check product-worker throughput and DB write performance."
+      }
+    }
+    slowburn {
+      label {
+        key   = "severity"
+        value = "warning"
+      }
+      annotation {
+        key   = "name"
+        value = "Product Upload Job Latency — Slow Burn"
+      }
+      annotation {
+        key   = "description"
+        value = "Product upload job p99 latency SLO burning >6× rate. Review batch INSERT sizes and DB connection pool health."
       }
     }
   }

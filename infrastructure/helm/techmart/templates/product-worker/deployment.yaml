@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-worker
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "techmart.labels" . | nindent 4 }}
+    app: product-worker
+    app.kubernetes.io/component: product-worker
+spec:
+  replicas: {{ .Values.productWorker.replicas }}
+  selector:
+    matchLabels:
+      app: product-worker
+  template:
+    metadata:
+      labels:
+        app: product-worker
+        app.kubernetes.io/component: product-worker
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: "techmart"
+    spec:
+      containers:
+        - name: product-worker
+          image: "{{ if .Values.global.imageRegistry }}{{ .Values.global.imageRegistry }}/{{ end }}{{ .Values.productWorker.image.repository }}:{{ .Values.productWorker.image.tag }}"
+          imagePullPolicy: {{ .Values.productWorker.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: product-worker-config
+            - secretRef:
+                name: postgres-secret
+          resources:
+            {{- toYaml .Values.productWorker.resources | nindent 12 }}

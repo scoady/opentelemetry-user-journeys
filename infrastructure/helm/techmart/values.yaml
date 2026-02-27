@@ -111,6 +111,37 @@ inventorySvc:
       memory: "128Mi"
       cpu: "250m"
 
+# ── Kafka (single-broker KRaft, no Zookeeper) ────────────────────────────────
+kafka:
+  image:
+    repository: bitnami/kafka
+    tag: "3.7"
+
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# ── Product Worker (Kafka consumer) ──────────────────────────────────────────
+productWorker:
+  image:
+    repository: webstore/product-worker
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  replicas: 1
+
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "256Mi"
+      cpu: "250m"
+
 # ── Traffic generator (k6) ────────────────────────────────────────────────────
 traffic:
   # Set to false to deploy without synthetic load (e.g. production).

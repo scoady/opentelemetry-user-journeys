@@ -28,21 +28,25 @@ echo ">>> Image tag: ${TAG}"
 echo ""
 echo ">>> Building Docker images…"
 
-echo "  [1/3] webstore/api:${TAG}"
+echo "  [1/4] webstore/api:${TAG}"
 docker build -t "webstore/api:${TAG}" "${ROOT_DIR}/api"
 
-echo "  [2/3] webstore/inventory-svc:${TAG}"
+echo "  [2/4] webstore/inventory-svc:${TAG}"
 docker build -t "webstore/inventory-svc:${TAG}" "${ROOT_DIR}/inventory-svc"
 
-echo "  [3/3] webstore/frontend:${TAG}"
+echo "  [3/4] webstore/frontend:${TAG}"
 docker build -t "webstore/frontend:${TAG}" "${ROOT_DIR}/frontend"
+
+echo "  [4/4] webstore/product-worker:${TAG}"
+docker build -t "webstore/product-worker:${TAG}" "${ROOT_DIR}/product-worker"
 
 # ── 2. Load into kind ─────────────────────────────────────────────────────────
 echo ""
 echo ">>> Loading images into kind cluster 'techmart'…"
-kind load docker-image "webstore/api:${TAG}"           --name techmart
-kind load docker-image "webstore/inventory-svc:${TAG}" --name techmart
-kind load docker-image "webstore/frontend:${TAG}"      --name techmart
+kind load docker-image "webstore/api:${TAG}"            --name techmart
+kind load docker-image "webstore/inventory-svc:${TAG}"  --name techmart
+kind load docker-image "webstore/frontend:${TAG}"       --name techmart
+kind load docker-image "webstore/product-worker:${TAG}" --name techmart
 
 # ── 3. Helm upgrade ───────────────────────────────────────────────────────────
 # Passing a new image tag changes the Deployment spec — Helm's --wait handles
@@ -56,6 +60,7 @@ if kubectl get namespace webstore &>/dev/null; then
     --set "api.image.tag=${TAG}" \
     --set "inventorySvc.image.tag=${TAG}" \
     --set "frontend.image.tag=${TAG}" \
+    --set "productWorker.image.tag=${TAG}" \
     --wait \
     --timeout 3m
 

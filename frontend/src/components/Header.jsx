@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Header({ cartCount, onCartOpen, onLogoClick, onOrderHistory }) {
+export default function Header({ cartCount, onCartOpen, onLogoClick, onOrderHistory, onAdmin }) {
   return (
     <header className="header">
       <div className="header-inner">
@@ -8,6 +8,7 @@ export default function Header({ cartCount, onCartOpen, onLogoClick, onOrderHist
           🛒 TechMart
         </span>
         <div className="header-actions">
+          <button className="nav-btn" onClick={onAdmin}>Admin</button>
           <button className="nav-btn" onClick={onOrderHistory}>My Orders</button>
           <button className="cart-btn" onClick={onCartOpen}>
             🛍️ Cart
