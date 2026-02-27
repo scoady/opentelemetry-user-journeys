@@ -61,9 +61,6 @@ spec:
             buckets: [10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2s, 5s, 10s]
         dimensions:
           - name: cuj.name
-          - name: http.route
-          - name: http.request.method
-          - name: http.response.status_code
         metrics_flush_interval: 60s
 
     processors:
