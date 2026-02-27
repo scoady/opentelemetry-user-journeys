@@ -16,5 +16,11 @@ output "dashboard_urls" {
     cuj_deep_dive       = "${trimsuffix(var.grafana_url, "/")}/d/${jsondecode(file("${path.module}/grafana/dashboards/cuj-deep-dive.json")).uid}"
     latency_analysis    = "${trimsuffix(var.grafana_url, "/")}/d/${jsondecode(file("${path.module}/grafana/dashboards/latency-analysis.json")).uid}"
     traffic_errors      = "${trimsuffix(var.grafana_url, "/")}/d/${jsondecode(file("${path.module}/grafana/dashboards/traffic-errors.json")).uid}"
+    admin_embed         = "${trimsuffix(var.grafana_url, "/")}/d/${jsondecode(file("${path.module}/grafana/dashboards/admin-embed.json")).uid}"
   }
+}
+
+output "admin_embed_public_url" {
+  description = "Public (no-auth) URL for the admin embed dashboard. Use this in the GRAFANA_EMBED_URL env var."
+  value       = "${trimsuffix(var.grafana_url, "/")}/public-dashboards/${grafana_dashboard_public.admin_embed.access_token}"
 }

@@ -123,6 +123,9 @@ export default function Admin({ onBack }) {
   const startTimeRef = useRef(null);
   const [elapsed, setElapsed] = useState(null);
 
+  // Grafana embed
+  const [grafanaEmbedUrl, setGrafanaEmbedUrl] = useState('');
+
   // Chaos state
   const [chaosConfig, setChaosConfig] = useState({ faults: {}, validCujs: [] });
   const [inventoryDelay, setInventoryDelay] = useState(500);
@@ -159,6 +162,13 @@ export default function Admin({ onBack }) {
   }, []);
 
   useEffect(() => { fetchChaos(); }, [fetchChaos]);
+
+  useEffect(() => {
+    fetch('/api/admin/config')
+      .then(r => r.ok ? r.json() : {})
+      .then(c => { if (c.grafanaEmbedUrl) setGrafanaEmbedUrl(c.grafanaEmbedUrl); })
+      .catch(() => {});
+  }, []);
 
   const handleSetFault = async (cuj, delayMs, errorRate) => {
     try {
@@ -368,6 +378,19 @@ export default function Admin({ onBack }) {
           </div>
         )}
       </div>
+
+      {/* ── Live Traffic ── */}
+      {grafanaEmbedUrl && (
+        <div className="admin-card grafana-embed-card">
+          <h2 className="admin-section-title">Live Traffic</h2>
+          <iframe
+            className="grafana-embed"
+            src={grafanaEmbedUrl}
+            title="Live Traffic"
+            frameBorder="0"
+          />
+        </div>
+      )}
 
       {/* ── Chaos Engineering ── */}
       <div className="chaos-card">

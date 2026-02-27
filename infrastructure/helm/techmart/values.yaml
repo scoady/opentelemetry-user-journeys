@@ -46,8 +46,13 @@ api:
     # a spec change on every build and triggers a rolling update automatically.
     pullPolicy: IfNotPresent
 
-  replicas: 2
+  replicas: 1
   port: 3001
+
+  # Public Grafana dashboard URL for the traffic embed iframe on the admin page.
+  # Set after `terraform apply` using the admin_embed_public_url output:
+  #   helm upgrade techmart ... --set api.grafanaEmbedUrl="<url>"
+  grafanaEmbedUrl: ""
 
   otel:
     # Set to true to have the OTel Operator inject the Node.js SDK init container.
@@ -148,7 +153,7 @@ traffic:
   enabled: true
 
   # Requests per second. Adjust and run `helm upgrade` to change live.
-  rps: 5
+  rps: 7
 
   # Target base URL. Override if deploying outside kind.
   targetUrl: "http://frontend.webstore.svc.cluster.local"

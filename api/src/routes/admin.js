@@ -174,4 +174,11 @@ router.delete('/chaos', (req, res) => {
   res.json({ cleared: 'all' });
 });
 
+// GET /api/admin/config — frontend config (e.g. Grafana embed URL)
+router.get('/config', (req, res) => {
+  res.json({
+    grafanaEmbedUrl: process.env.GRAFANA_EMBED_URL || '',
+  });
+});
+
 module.exports = router;
