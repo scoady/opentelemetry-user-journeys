@@ -46,12 +46,25 @@ function ChaosRow({ cuj, fault, onSet, onClear }) {
   const isActive = !!fault;
   const [delayMs, setDelayMs] = useState(fault?.delayMs || 3000);
   const [errorRate, setErrorRate] = useState(fault?.errorRate || 0);
+  const [busy, setBusy] = useState(false);
+
+  const handleAction = async (action) => {
+    setBusy(true);
+    try { await action(); } finally { setBusy(false); }
+  };
 
   return (
     <div className={`chaos-row ${isActive ? 'active' : ''}`}>
       <div className="chaos-cuj-name">
         <span className={`chaos-dot ${isActive ? 'on' : 'off'}`} />
         {cuj}
+        {isActive && (
+          <span className="chaos-active-label">
+            {fault.delayMs > 0 && `+${fault.delayMs}ms`}
+            {fault.delayMs > 0 && fault.errorRate > 0 && ', '}
+            {fault.errorRate > 0 && `${Math.round(fault.errorRate * 100)}% err`}
+          </span>
+        )}
       </div>
       <div className="chaos-controls">
         <label>Delay:</label>
@@ -62,6 +75,7 @@ function ChaosRow({ cuj, fault, onSet, onClear }) {
           value={delayMs}
           onChange={e => setDelayMs(parseInt(e.target.value) || 0)}
           className="chaos-input"
+          disabled={busy}
         />
         <span className="chaos-unit">ms</span>
         <label>Error:</label>
@@ -73,17 +87,23 @@ function ChaosRow({ cuj, fault, onSet, onClear }) {
           value={errorRate}
           onChange={e => setErrorRate(parseFloat(e.target.value) || 0)}
           className="chaos-input chaos-input-sm"
+          disabled={busy}
         />
         {isActive ? (
-          <button className="chaos-btn chaos-btn-clear" onClick={() => onClear(cuj)}>
-            Clear
+          <button
+            className="chaos-btn chaos-btn-clear"
+            disabled={busy}
+            onClick={() => handleAction(() => onClear(cuj))}
+          >
+            {busy ? 'Clearing...' : 'Clear'}
           </button>
         ) : (
           <button
             className="chaos-btn chaos-btn-inject"
-            onClick={() => onSet(cuj, delayMs, errorRate)}
+            disabled={busy}
+            onClick={() => handleAction(() => onSet(cuj, delayMs, errorRate))}
           >
-            Inject
+            {busy ? 'Injecting...' : 'Inject'}
           </button>
         )}
       </div>
@@ -107,10 +127,20 @@ export default function Admin({ onBack }) {
   const [chaosConfig, setChaosConfig] = useState({ faults: {}, validCujs: [] });
   const [inventoryDelay, setInventoryDelay] = useState(500);
   const [chaosLoading, setChaosLoading] = useState(true);
+  const [chaosStatus, setChaosStatus] = useState(null); // { type: 'success'|'error', message }
+  const [inventoryBusy, setInventoryBusy] = useState(false);
+  const chaosStatusTimer = useRef(null);
 
   useEffect(() => () => {
     if (pollRef.current) clearInterval(pollRef.current);
+    if (chaosStatusTimer.current) clearTimeout(chaosStatusTimer.current);
   }, []);
+
+  const showChaosStatus = (type, message) => {
+    setChaosStatus({ type, message });
+    if (chaosStatusTimer.current) clearTimeout(chaosStatusTimer.current);
+    chaosStatusTimer.current = setTimeout(() => setChaosStatus(null), 4000);
+  };
 
   // ── Chaos fetchers ──
   const fetchChaos = useCallback(async () => {
@@ -131,38 +161,68 @@ export default function Admin({ onBack }) {
   useEffect(() => { fetchChaos(); }, [fetchChaos]);
 
   const handleSetFault = async (cuj, delayMs, errorRate) => {
-    await fetch(`/api/admin/chaos/${cuj}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ delayMs, errorRate }),
-    });
-    fetchChaos();
+    try {
+      const res = await fetch(`/api/admin/chaos/${cuj}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delayMs, errorRate }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+      await fetchChaos();
+      const parts = [];
+      if (delayMs > 0) parts.push(`+${delayMs}ms delay`);
+      if (errorRate > 0) parts.push(`${Math.round(errorRate * 100)}% errors`);
+      showChaosStatus('success', `Fault injected on ${cuj}: ${parts.join(', ')}`);
+    } catch (err) {
+      showChaosStatus('error', `Failed to inject fault on ${cuj}: ${err.message}`);
+    }
   };
 
   const handleClearFault = async (cuj) => {
-    await fetch(`/api/admin/chaos/${cuj}`, { method: 'DELETE' });
-    fetchChaos();
+    try {
+      const res = await fetch(`/api/admin/chaos/${cuj}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await fetchChaos();
+      showChaosStatus('success', `Fault cleared on ${cuj}`);
+    } catch (err) {
+      showChaosStatus('error', `Failed to clear fault on ${cuj}: ${err.message}`);
+    }
   };
 
   const handleClearAll = async () => {
-    await Promise.all([
-      fetch('/api/admin/chaos', { method: 'DELETE' }),
-      fetch('/api/admin/chaos/inventory-delay', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ delayMs: 500 }),
-      }),
-    ]);
-    fetchChaos();
+    try {
+      const [chaosRes, delayRes] = await Promise.all([
+        fetch('/api/admin/chaos', { method: 'DELETE' }),
+        fetch('/api/admin/chaos/inventory-delay', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ delayMs: 500 }),
+        }),
+      ]);
+      if (!chaosRes.ok || !delayRes.ok) throw new Error('One or more resets failed');
+      await fetchChaos();
+      showChaosStatus('success', 'All faults cleared, inventory-svc reset to 500ms');
+    } catch (err) {
+      showChaosStatus('error', `Reset failed: ${err.message}`);
+    }
   };
 
   const handleInventoryDelay = async (ms) => {
-    await fetch('/api/admin/chaos/inventory-delay', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ delayMs: ms }),
-    });
-    fetchChaos();
+    setInventoryBusy(true);
+    try {
+      const res = await fetch('/api/admin/chaos/inventory-delay', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delayMs: ms }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+      await fetchChaos();
+      showChaosStatus('success', `inventory-svc delay set to ${ms}ms`);
+    } catch (err) {
+      showChaosStatus('error', `Failed to set inventory delay: ${err.message}`);
+    } finally {
+      setInventoryBusy(false);
+    }
   };
 
   // ── Upload handlers ──
@@ -321,6 +381,28 @@ export default function Admin({ onBack }) {
           Inject latency or errors into CUJs at runtime. Faults are in-memory and clear on pod restart.
         </p>
 
+        {/* Status toast */}
+        {chaosStatus && (
+          <div className={`chaos-toast chaos-toast-${chaosStatus.type}`}>
+            {chaosStatus.message}
+          </div>
+        )}
+
+        {/* Active faults summary */}
+        {(!chaosLoading && (Object.keys(chaosConfig.faults).length > 0 || inventoryDelay !== 500)) && (
+          <div className="chaos-summary">
+            <strong>Active faults:</strong>
+            {inventoryDelay !== 500 && (
+              <span className="chaos-summary-tag">inventory-svc: {inventoryDelay}ms</span>
+            )}
+            {Object.entries(chaosConfig.faults).map(([cuj, f]) => (
+              <span key={cuj} className="chaos-summary-tag">
+                {cuj}: {f.delayMs > 0 && `+${f.delayMs}ms`}{f.delayMs > 0 && f.errorRate > 0 && ', '}{f.errorRate > 0 && `${Math.round(f.errorRate * 100)}% err`}
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Scenario A: Downstream service delay */}
         <div className="chaos-scenario">
           <h3 className="chaos-scenario-title">Downstream Service Delay</h3>
@@ -336,6 +418,7 @@ export default function Admin({ onBack }) {
                 <button
                   key={ms}
                   className={`chaos-preset ${inventoryDelay === ms ? 'active' : ''}`}
+                  disabled={inventoryBusy}
                   onClick={() => handleInventoryDelay(ms)}
                 >
                   {ms >= 1000 ? `${ms / 1000}s` : `${ms}ms`}
