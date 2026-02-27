@@ -27,7 +27,7 @@ pipeline {
       steps {
         container('terraform') {
           dir('terraform') {
-            sh 'terraform init -input=false'
+            sh 'terraform init -input=false -backend-config="in_cluster_config=true"'
           }
         }
       }

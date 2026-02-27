@@ -207,12 +207,12 @@ No collector, Helm template, or Jenkinsfile changes needed — spanmetrics auto-
 ```bash
 # Local development
 cd terraform
-terraform init              # Connects to Kubernetes backend
-terraform plan              # Shows grafana_slo and grafana_dashboard resources
-terraform apply             # Creates SLOs and dashboards in Grafana Cloud
+terraform init -backend-config="config_path=$HOME/.kube/config"
+terraform plan
+terraform apply
 
 # First-time migration from local state
-terraform init -migrate-state   # Moves terraform.tfstate → Kubernetes Secret
+terraform init -migrate-state -backend-config="config_path=$HOME/.kube/config"
 ```
 
 Each CUJ gets exactly 2 `grafana_slo` resources:
