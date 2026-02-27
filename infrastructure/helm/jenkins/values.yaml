@@ -71,7 +71,7 @@ controller:
       # System message
       welcome-message: |
         jenkins:
-          systemMessage: "TechMart CI/CD — kind dev cluster.\n\nPipelines auto-configured: techmart-build, techmart-deploy."
+          systemMessage: "CI/CD — kind dev cluster.\n\nPipelines auto-configured: techmart-build, techmart-deploy, llm-daw-build, llm-daw-deploy."
 
       # SSH credential for GitHub clones + skip host-key verification (local dev)
       credentials: |
@@ -301,6 +301,54 @@ controller:
                       }
                     }
                     scriptPath('ci/terraform.Jenkinsfile')
+                  }
+                }
+                logRotator {
+                  numToKeep(20)
+                }
+              }
+          - script: >
+              pipelineJob('llm-daw-build') {
+                description('Build LLM-DAW images with Kaniko and push to in-cluster registry, then deploy.')
+                definition {
+                  cpsScm {
+                    scm {
+                      git {
+                        remote {
+                          url('git@github.com:scoady/llm-daw.git')
+                          credentials('github-ssh')
+                        }
+                        branch('*/main')
+                      }
+                    }
+                    scriptPath('ci/build.Jenkinsfile')
+                  }
+                }
+                triggers {
+                  scm('H/5 * * * *')
+                }
+                logRotator {
+                  numToKeep(10)
+                }
+              }
+          - script: >
+              pipelineJob('llm-daw-deploy') {
+                description('Deploy LLM-DAW to the llm-daw namespace via helm upgrade.')
+                parameters {
+                  stringParam('IMAGE_TAG', 'latest', 'Git SHA tag to deploy (e.g. a1b2c3d)')
+                }
+                definition {
+                  cpsScm {
+                    scm {
+                      git {
+                        remote {
+                          url('git@github.com:scoady/llm-daw.git')
+                          credentials('github-ssh')
+                        }
+                        branch('*/main')
+                      }
+                    }
+                    scriptPath('ci/deploy.Jenkinsfile')
                   }
                 }
                 logRotator {
