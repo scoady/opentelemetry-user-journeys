@@ -44,7 +44,7 @@
       "gridPos": { "x": 0, "y": 0, "w": 8, "h": 4 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "sum(rate(techmart_calls_total{span_name=~\"cuj.*\"}[5m]))",
+        "expr": "sum(rate(techmart_calls_total{span_name=~\"cuj\\..+\"}[5m]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
@@ -57,7 +57,7 @@
       "gridPos": { "x": 8, "y": 0, "w": 8, "h": 4 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "sum(increase(techmart_calls_total{span_name=~\"cuj.*\", status_code=\"STATUS_CODE_ERROR\"}[1h]))",
+        "expr": "sum(increase(techmart_calls_total{span_name=~\"cuj\\..+\", status_code=\"STATUS_CODE_ERROR\"}[1h]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
@@ -78,7 +78,7 @@
       "gridPos": { "x": 16, "y": 0, "w": 8, "h": 4 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "100 * sum(rate(techmart_calls_total{span_name=~\"cuj.*\", status_code=\"STATUS_CODE_ERROR\"}[5m])) / sum(rate(techmart_calls_total{span_name=~\"cuj.*\"}[5m]))",
+        "expr": "100 * sum(rate(techmart_calls_total{span_name=~\"cuj\\..+\", status_code=\"STATUS_CODE_ERROR\"}[5m])) / sum(rate(techmart_calls_total{span_name=~\"cuj\\..+\"}[5m]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
@@ -106,8 +106,8 @@
       "gridPos": { "x": 0, "y": 5, "w": 16, "h": 10 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "sum by (span_name) (rate(techmart_calls_total{span_name=~\"cuj.*\"}[5m]))",
-        "legendFormat": "{{span_name}}"
+        "expr": "sum by (cuj_name) (rate(techmart_calls_total{span_name=~\"cuj\\..+\"}[5m]))",
+        "legendFormat": "{{cuj_name}}"
       }],
       "fieldConfig": {
         "defaults": { "unit": "reqps", "custom": { "lineWidth": 1, "fillOpacity": 40, "stacking": { "mode": "normal" } } }
@@ -121,8 +121,8 @@
       "gridPos": { "x": 16, "y": 5, "w": 8, "h": 10 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "sum by (span_name) (increase(techmart_calls_total{span_name=~\"cuj.*\"}[1h]))",
-        "legendFormat": "{{span_name}}"
+        "expr": "sum by (cuj_name) (increase(techmart_calls_total{span_name=~\"cuj\\..+\"}[1h]))",
+        "legendFormat": "{{cuj_name}}"
       }],
       "options": {
         "reduceOptions": { "calcs": ["lastNotNull"] },
@@ -146,8 +146,8 @@
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
         {
-          "expr": "100 * sum by (span_name) (rate(techmart_calls_total{span_name=~\"cuj.*\", status_code=\"STATUS_CODE_ERROR\"}[5m])) / sum by (span_name) (rate(techmart_calls_total{span_name=~\"cuj.*\"}[5m]))",
-          "legendFormat": "{{span_name}}"
+          "expr": "100 * sum by (cuj_name) (rate(techmart_calls_total{span_name=~\"cuj\\..+\", status_code=\"STATUS_CODE_ERROR\"}[5m])) / sum by (cuj_name) (rate(techmart_calls_total{span_name=~\"cuj\\..+\"}[5m]))",
+          "legendFormat": "{{cuj_name}}"
         },
         { "expr": "vector(0.1)", "legendFormat": "SLO budget (0.1%)" }
       ],
@@ -170,8 +170,8 @@
       "gridPos": { "x": 0, "y": 24, "w": 14, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "sum by (span_name) (increase(techmart_calls_total{span_name=~\"cuj.*\", status_code=\"STATUS_CODE_ERROR\"}[5m]))",
-        "legendFormat": "{{span_name}}"
+        "expr": "sum by (cuj_name) (increase(techmart_calls_total{span_name=~\"cuj\\..+\", status_code=\"STATUS_CODE_ERROR\"}[5m]))",
+        "legendFormat": "{{cuj_name}}"
       }],
       "fieldConfig": {
         "defaults": { "unit": "short", "custom": { "lineWidth": 0, "fillOpacity": 80, "stacking": { "mode": "normal" }, "drawStyle": "bars" } }
@@ -186,11 +186,11 @@
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
         {
-          "expr": "sum(rate(techmart_calls_total{span_name=~\"cuj.*\", status_code!=\"STATUS_CODE_ERROR\"}[5m]))",
+          "expr": "sum(rate(techmart_calls_total{span_name=~\"cuj\\..+\", status_code!=\"STATUS_CODE_ERROR\"}[5m]))",
           "legendFormat": "success"
         },
         {
-          "expr": "sum(rate(techmart_calls_total{span_name=~\"cuj.*\", status_code=\"STATUS_CODE_ERROR\"}[5m]))",
+          "expr": "sum(rate(techmart_calls_total{span_name=~\"cuj\\..+\", status_code=\"STATUS_CODE_ERROR\"}[5m]))",
           "legendFormat": "error"
         }
       ],

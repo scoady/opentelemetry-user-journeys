@@ -103,8 +103,8 @@
       "gridPos": { "x": 8, "y": 1, "w": 8, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.5, sum(rate(techmart_duration_milliseconds_bucket{span_name=~\"cuj.*\"}[5m])) by (span_name, le))",
-        "legendFormat": "{{span_name}}"
+        "expr": "histogram_quantile(0.5, sum(rate(techmart_duration_milliseconds_bucket{span_name=~\"cuj\\..+\"}[5m])) by (cuj_name, le))",
+        "legendFormat": "{{cuj_name}}"
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal", "displayMode": "gradient", "showUnfilled": true },
       "fieldConfig": {
@@ -125,8 +125,8 @@
       "gridPos": { "x": 16, "y": 1, "w": 8, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=~\"cuj.*\"}[5m])) by (span_name, le))",
-        "legendFormat": "{{span_name}}"
+        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=~\"cuj\\..+\"}[5m])) by (cuj_name, le))",
+        "legendFormat": "{{cuj_name}}"
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal", "displayMode": "gradient", "showUnfilled": true },
       "fieldConfig": {
@@ -205,8 +205,8 @@
       "gridPos": { "x": 0, "y": 20, "w": 24, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=~\"cuj.*\"}[5m])) by (span_name, le))",
-        "legendFormat": "{{span_name}}"
+        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=~\"cuj\\..+\"}[5m])) by (cuj_name, le))",
+        "legendFormat": "{{cuj_name}}"
       }],
       "fieldConfig": {
         "defaults": { "unit": "ms", "custom": { "lineWidth": 2, "fillOpacity": 0 } }
