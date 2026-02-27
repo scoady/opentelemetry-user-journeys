@@ -70,7 +70,7 @@ spec:
 
     exporters:
       debug:
-        verbosity: normal
+        verbosity: basic
 
       otlp_http/grafana:
         endpoint: https://otlp-gateway-prod-us-east-0.grafana.net/otlp
@@ -78,6 +78,9 @@ spec:
           authenticator: basicauth/grafana
 
     service:
+      telemetry:
+        logs:
+          level: warn
       extensions: [basicauth/grafana]
       pipelines:
         traces:
@@ -85,12 +88,12 @@ spec:
           processors: [batch]
           # spanmetrics is a connector — it appears as an exporter here and
           # as a receiver in the metrics pipeline below.
-          exporters: [debug, otlp_http/grafana, spanmetrics]
+          exporters: [otlp_http/grafana, spanmetrics]
         metrics:
           receivers: [otlp, spanmetrics]
           processors: [batch]
-          exporters: [debug, otlp_http/grafana]
+          exporters: [otlp_http/grafana]
         logs:
           receivers: [otlp]
           processors: [batch]
-          exporters: [debug, otlp_http/grafana]
+          exporters: [otlp_http/grafana]
