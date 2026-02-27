@@ -7,7 +7,6 @@ metadata:
     {{- include "techmart.labels" . | nindent 4 }}
     app.kubernetes.io/component: api
 data:
-  PORT:              {{ .Values.api.port | quote }}
-  INVENTORY_URL:     "http://inventory-svc:{{ .Values.inventorySvc.port }}"
-  KAFKA_BROKER:      "kafka:9092"
-  GRAFANA_EMBED_URL: {{ .Values.api.grafanaEmbedUrl | quote }}
+  PORT:          {{ .Values.api.port | quote }}
+  INVENTORY_URL: "http://inventory-svc:{{ .Values.inventorySvc.port }}"
+  KAFKA_BROKER:  "kafka:9092"

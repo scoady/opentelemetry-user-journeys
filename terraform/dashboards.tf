@@ -71,19 +71,3 @@ resource "grafana_dashboard" "traffic_errors" {
   config_json = file("${path.module}/grafana/dashboards/traffic-errors.json")
   overwrite   = true
 }
-
-resource "grafana_dashboard" "admin_embed" {
-  folder      = grafana_folder.techmart.uid
-  config_json = file("${path.module}/grafana/dashboards/admin-embed.json")
-  overwrite   = true
-}
-
-# Public (no-auth) version of the admin embed dashboard for iframe embedding.
-resource "grafana_dashboard_public" "admin_embed" {
-  dashboard_uid          = jsondecode(file("${path.module}/grafana/dashboards/admin-embed.json")).uid
-  is_enabled             = true
-  time_selection_enabled = false
-  annotations_enabled    = false
-
-  depends_on = [grafana_dashboard.admin_embed]
-}

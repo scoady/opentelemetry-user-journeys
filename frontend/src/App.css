@@ -894,23 +894,6 @@ body {
   margin: 0.5rem 0 0;
 }
 
-/* ── Grafana Embed ──────────────────────────────────────────────────────── */
-.grafana-embed-card {
-  background: white;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 2rem;
-  margin-bottom: 2rem;
-}
-
-.grafana-embed {
-  width: 100%;
-  height: 420px;
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius);
-  background: #181b1f;
-}
-
 /* ── Chaos Engineering Panel ─────────────────────────────────────────────── */
 .chaos-card {
   background: white;
