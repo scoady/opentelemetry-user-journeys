@@ -1,7 +1,7 @@
 # ── Folder ────────────────────────────────────────────────────────────────────
-resource "grafana_folder" "techmart" {
+resource "grafana_folder" "scoady" {
   title = var.folder_title
-  uid   = "techmart-slos"
+  uid   = "scoady-slos"
 }
 
 # ── Dashboards ────────────────────────────────────────────────────────────────
@@ -13,61 +13,61 @@ resource "grafana_folder" "techmart" {
 # in-place rather than error if the UID already exists in Grafana.
 
 resource "grafana_dashboard" "slo_overview" {
-  folder      = grafana_folder.techmart.uid
+  folder      = grafana_folder.scoady.uid
   config_json = file("${path.module}/grafana/dashboards/slo-overview.json")
   overwrite   = true
 }
 
 resource "grafana_dashboard" "checkout_slo" {
-  folder      = grafana_folder.techmart.uid
+  folder      = grafana_folder.scoady.uid
   config_json = file("${path.module}/grafana/dashboards/checkout-slo.json")
   overwrite   = true
 }
 
 resource "grafana_dashboard" "checkout_breakdown" {
-  folder      = grafana_folder.techmart.uid
+  folder      = grafana_folder.scoady.uid
   config_json = file("${path.module}/grafana/dashboards/checkout-breakdown.json")
   overwrite   = true
 }
 
 resource "grafana_dashboard" "cuj_slo" {
-  folder      = grafana_folder.techmart.uid
+  folder      = grafana_folder.scoady.uid
   config_json = file("${path.module}/grafana/dashboards/cuj-slo.json")
   overwrite   = true
 }
 
 resource "grafana_dashboard" "job_lifecycle" {
-  folder      = grafana_folder.techmart.uid
+  folder      = grafana_folder.scoady.uid
   config_json = file("${path.module}/grafana/dashboards/job-lifecycle.json")
   overwrite   = true
 }
 
 resource "grafana_dashboard" "observability_guide" {
-  folder      = grafana_folder.techmart.uid
+  folder      = grafana_folder.scoady.uid
   config_json = file("${path.module}/grafana/dashboards/observability-guide.json")
   overwrite   = true
 }
 
 resource "grafana_dashboard" "executive_summary" {
-  folder      = grafana_folder.techmart.uid
+  folder      = grafana_folder.scoady.uid
   config_json = file("${path.module}/grafana/dashboards/executive-summary.json")
   overwrite   = true
 }
 
 resource "grafana_dashboard" "cuj_deep_dive" {
-  folder      = grafana_folder.techmart.uid
+  folder      = grafana_folder.scoady.uid
   config_json = file("${path.module}/grafana/dashboards/cuj-deep-dive.json")
   overwrite   = true
 }
 
 resource "grafana_dashboard" "latency_analysis" {
-  folder      = grafana_folder.techmart.uid
+  folder      = grafana_folder.scoady.uid
   config_json = file("${path.module}/grafana/dashboards/latency-analysis.json")
   overwrite   = true
 }
 
 resource "grafana_dashboard" "traffic_errors" {
-  folder      = grafana_folder.techmart.uid
+  folder      = grafana_folder.scoady.uid
   config_json = file("${path.module}/grafana/dashboards/traffic-errors.json")
   overwrite   = true
 }

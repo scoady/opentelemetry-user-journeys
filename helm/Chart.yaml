@@ -1,11 +1,11 @@
 apiVersion: v2
-name: techmart
-description: TechMart web store — frontend, API, PostgreSQL, and k6 traffic generator.
+name: scoady
+description: scoady.local web store — frontend, API, PostgreSQL, and k6 traffic generator.
 type: application
 version: 0.1.0
 appVersion: "1.0.0"
 keywords:
-  - techmart
-  - webstore
+  - scoady
+  - scoady
   - otel
   - slo

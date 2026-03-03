@@ -18,12 +18,12 @@
     { "type": "panel",      "id": "heatmap",    "name": "Heatmap",     "version": ""       },
     { "type": "panel",      "id": "barchart",   "name": "Bar chart",   "version": ""       }
   ],
-  "title": "TechMart — Latency Analysis",
+  "title": "scoady.local — Latency Analysis",
   "description": "Deep dive into latency distribution using histogram data from the spanmetrics connector. Heatmaps, percentile comparisons, and bucket breakdowns.",
-  "uid": "techmart-latency-analysis",
+  "uid": "scoady-latency-analysis",
   "version": 1,
   "schemaVersion": 38,
-  "tags": ["techmart", "latency", "histogram"],
+  "tags": ["scoady", "latency", "histogram"],
   "time": { "from": "now-1h", "to": "now" },
   "refresh": "30s",
   "templating": {
@@ -69,7 +69,7 @@
       "gridPos": { "x": 0, "y": 1, "w": 4, "h": 4 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[5m])) by (le))",
+        "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[5m])) by (le))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
@@ -90,7 +90,7 @@
       "gridPos": { "x": 4, "y": 1, "w": 4, "h": 4 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.50, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[5m])) by (le))",
+        "expr": "histogram_quantile(0.50, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[5m])) by (le))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
@@ -103,7 +103,7 @@
       "gridPos": { "x": 8, "y": 1, "w": 8, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.5, sum(rate(techmart_duration_milliseconds_bucket{span_name=~\"cuj..+\"}[5m])) by (cuj_name, le))",
+        "expr": "histogram_quantile(0.5, sum(rate(scoady_duration_milliseconds_bucket{span_name=~\"cuj..+\"}[5m])) by (cuj_name, le))",
         "legendFormat": "{{cuj_name}}"
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal", "displayMode": "gradient", "showUnfilled": true },
@@ -125,7 +125,7 @@
       "gridPos": { "x": 16, "y": 1, "w": 8, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=~\"cuj..+\"}[5m])) by (cuj_name, le))",
+        "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=~\"cuj..+\"}[5m])) by (cuj_name, le))",
         "legendFormat": "{{cuj_name}}"
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal", "displayMode": "gradient", "showUnfilled": true },
@@ -148,15 +148,15 @@
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[5m])) by (le))",
           "legendFormat": "p50"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[5m])) by (le))",
           "legendFormat": "p95"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[5m])) by (le))",
           "legendFormat": "p99"
         }
       ],
@@ -178,7 +178,7 @@
       "gridPos": { "x": 0, "y": 10, "w": 24, "h": 10 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "sum(increase(techmart_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[$__rate_interval])) by (le)",
+        "expr": "sum(increase(scoady_duration_milliseconds_bucket{span_name=\"cuj.${cuj}\"}[$__rate_interval])) by (le)",
         "legendFormat": "{{le}}",
         "format": "heatmap"
       }],
@@ -205,7 +205,7 @@
       "gridPos": { "x": 0, "y": 20, "w": 24, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=~\"cuj..+\"}[5m])) by (cuj_name, le))",
+        "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=~\"cuj..+\"}[5m])) by (cuj_name, le))",
         "legendFormat": "{{cuj_name}}"
       }],
       "fieldConfig": {

@@ -52,8 +52,8 @@ pipeline {
                 /kaniko/executor \\
                   --dockerfile=${WORKSPACE}/api/Dockerfile \\
                   --context=dir://${WORKSPACE}/api \\
-                  --destination=${REGISTRY}/webstore/api:${IMAGE_TAG} \\
-                  --destination=${REGISTRY}/webstore/api:latest \\
+                  --destination=${REGISTRY}/scoady/api:${IMAGE_TAG} \\
+                  --destination=${REGISTRY}/scoady/api:latest \\
                   --insecure \\
                   --insecure-pull \\
                   --skip-tls-verify \\
@@ -73,8 +73,8 @@ pipeline {
                 /kaniko/executor \\
                   --dockerfile=${WORKSPACE}/inventory-svc/Dockerfile \\
                   --context=dir://${WORKSPACE}/inventory-svc \\
-                  --destination=${REGISTRY}/webstore/inventory-svc:${IMAGE_TAG} \\
-                  --destination=${REGISTRY}/webstore/inventory-svc:latest \\
+                  --destination=${REGISTRY}/scoady/inventory-svc:${IMAGE_TAG} \\
+                  --destination=${REGISTRY}/scoady/inventory-svc:latest \\
                   --insecure \\
                   --insecure-pull \\
                   --skip-tls-verify \\
@@ -94,8 +94,8 @@ pipeline {
                 /kaniko/executor \\
                   --dockerfile=${WORKSPACE}/frontend/Dockerfile \\
                   --context=dir://${WORKSPACE}/frontend \\
-                  --destination=${REGISTRY}/webstore/frontend:${IMAGE_TAG} \\
-                  --destination=${REGISTRY}/webstore/frontend:latest \\
+                  --destination=${REGISTRY}/scoady/frontend:${IMAGE_TAG} \\
+                  --destination=${REGISTRY}/scoady/frontend:latest \\
                   --insecure \\
                   --insecure-pull \\
                   --skip-tls-verify \\
@@ -115,8 +115,8 @@ pipeline {
                 /kaniko/executor \\
                   --dockerfile=${WORKSPACE}/product-worker/Dockerfile \\
                   --context=dir://${WORKSPACE}/product-worker \\
-                  --destination=${REGISTRY}/webstore/product-worker:${IMAGE_TAG} \\
-                  --destination=${REGISTRY}/webstore/product-worker:latest \\
+                  --destination=${REGISTRY}/scoady/product-worker:${IMAGE_TAG} \\
+                  --destination=${REGISTRY}/scoady/product-worker:latest \\
                   --insecure \\
                   --insecure-pull \\
                   --skip-tls-verify \\
@@ -135,9 +135,9 @@ pipeline {
     stage('Deploy') {
       steps {
         script {
-          echo "Triggering techmart-deploy with IMAGE_TAG=${IMAGE_TAG}"
+          echo "Triggering scoady-deploy with IMAGE_TAG=${IMAGE_TAG}"
           build(
-            job: 'techmart-deploy',
+            job: 'scoady-deploy',
             parameters: [
               string(name: 'IMAGE_TAG', value: IMAGE_TAG)
             ],
@@ -152,7 +152,7 @@ pipeline {
 
   post {
     success {
-      echo "Build and deploy complete. Images: ${REGISTRY}/webstore/*:${IMAGE_TAG}"
+      echo "Build and deploy complete. Images: ${REGISTRY}/scoady/*:${IMAGE_TAG}"
     }
     failure {
       echo "Build failed. Review Kaniko output above for details."

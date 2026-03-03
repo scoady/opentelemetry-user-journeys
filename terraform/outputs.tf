@@ -1,6 +1,6 @@
 output "folder_url" {
-  description = "Direct link to the TechMart SLOs folder in Grafana."
-  value       = "${trimsuffix(var.grafana_url, "/")}//dashboards/f/${grafana_folder.techmart.uid}"
+  description = "Direct link to the scoady.local SLOs folder in Grafana."
+  value       = "${trimsuffix(var.grafana_url, "/")}//dashboards/f/${grafana_folder.scoady.uid}"
 }
 
 output "dashboard_urls" {

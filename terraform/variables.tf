@@ -10,7 +10,7 @@ variable "grafana_api_key" {
 }
 
 variable "folder_title" {
-  description = "Name of the Grafana folder that will contain all TechMart dashboards."
+  description = "Name of the Grafana folder that will contain all scoady.local dashboards."
   type        = string
-  default     = "TechMart SLOs"
+  default     = "scoady.local SLOs"
 }

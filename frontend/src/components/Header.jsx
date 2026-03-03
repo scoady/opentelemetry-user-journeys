@@ -5,7 +5,7 @@ export default function Header({ cartCount, onCartOpen, onLogoClick, onOrderHist
     <header className="header">
       <div className="header-inner">
         <span className="logo" onClick={onLogoClick}>
-          🛒 TechMart
+          🛒 scoady.local
         </span>
         <div className="header-actions">
           <button className="nav-btn" onClick={onAdmin}>Admin</button>

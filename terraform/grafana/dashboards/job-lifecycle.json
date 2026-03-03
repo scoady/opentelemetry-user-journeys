@@ -26,12 +26,12 @@
     { "type": "panel",      "id": "stat",       "name": "Stat",        "version": ""       },
     { "type": "panel",      "id": "timeseries", "name": "Time series", "version": ""       }
   ],
-  "title": "TechMart — Job Lifecycle Explorer",
+  "title": "scoady.local — Job Lifecycle Explorer",
   "description": "Paste a trace ID to visualize the full product-upload job lifecycle: span waterfall, latency breakdown, error status, and SLO context for both upload and processing phases.",
-  "uid": "techmart-job-lifecycle",
+  "uid": "scoady-job-lifecycle",
   "version": 1,
   "schemaVersion": 38,
-  "tags": ["techmart", "job", "traces", "tempo", "product-upload"],
+  "tags": ["scoady", "job", "traces", "tempo", "product-upload"],
   "time": { "from": "now-1h", "to": "now" },
   "refresh": "30s",
   "templating": {
@@ -129,7 +129,7 @@
       "gridPos": { "x": 0, "y": 31, "w": 4, "h": 6 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.product-upload\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(techmart_calls_total{span_name=\"cuj.product-upload\"}[1h]))",
+        "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.product-upload\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(scoady_calls_total{span_name=\"cuj.product-upload\"}[1h]))",
         "legendFormat": "",
         "refId": "A"
       }],
@@ -153,7 +153,7 @@
       "gridPos": { "x": 4, "y": 31, "w": 4, "h": 6 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload\"}[5m])) by (le))",
+        "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-upload\"}[5m])) by (le))",
         "legendFormat": "",
         "refId": "A"
       }],
@@ -178,17 +178,17 @@
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
         {
-          "expr": "histogram_quantile(0.5, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.5, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-upload\"}[5m])) by (le))",
           "legendFormat": "p50",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-upload\"}[5m])) by (le))",
           "legendFormat": "p95",
           "refId": "B"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-upload\"}[5m])) by (le))",
           "legendFormat": "p99",
           "refId": "C"
         }
@@ -242,7 +242,7 @@
       "gridPos": { "x": 0, "y": 39, "w": 4, "h": 6 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.product-upload-job\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(techmart_calls_total{span_name=\"cuj.product-upload-job\"}[1h]))",
+        "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.product-upload-job\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(scoady_calls_total{span_name=\"cuj.product-upload-job\"}[1h]))",
         "legendFormat": "",
         "refId": "A"
       }],
@@ -266,7 +266,7 @@
       "gridPos": { "x": 4, "y": 39, "w": 4, "h": 6 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload-job\"}[5m])) by (le))",
+        "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-upload-job\"}[5m])) by (le))",
         "legendFormat": "",
         "refId": "A"
       }],
@@ -291,17 +291,17 @@
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
         {
-          "expr": "histogram_quantile(0.5, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload-job\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.5, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-upload-job\"}[5m])) by (le))",
           "legendFormat": "p50",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload-job\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-upload-job\"}[5m])) by (le))",
           "legendFormat": "p95",
           "refId": "B"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload-job\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-upload-job\"}[5m])) by (le))",
           "legendFormat": "p99",
           "refId": "C"
         }

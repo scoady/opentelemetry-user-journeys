@@ -1,4 +1,4 @@
--- TechMart Database Schema
+-- scoady.local Database Schema
 
 CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,

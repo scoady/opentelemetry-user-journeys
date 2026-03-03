@@ -26,12 +26,12 @@
     { "type": "panel",      "id": "stat",       "name": "Stat",        "version": ""       },
     { "type": "panel",      "id": "timeseries", "name": "Time series", "version": ""       }
   ],
-  "title": "TechMart — Observability Guide",
-  "description": "An interactive guide to TechMart's observability stack. Follow the data from user action to SLO alert — with live panels proving each step.",
-  "uid": "techmart-observability-guide",
+  "title": "scoady.local — Observability Guide",
+  "description": "An interactive guide to scoady.local's observability stack. Follow the data from user action to SLO alert — with live panels proving each step.",
+  "uid": "scoady-observability-guide",
   "version": 1,
   "schemaVersion": 38,
-  "tags": ["techmart", "guide", "observability", "traces", "slos"],
+  "tags": ["scoady", "guide", "observability", "traces", "slos"],
   "time": { "from": "now-1h", "to": "now" },
   "refresh": "30s",
   "templating": {
@@ -70,7 +70,7 @@
       "gridPos": { "x": 0, "y": 0, "w": 24, "h": 12 },
       "options": {
         "mode": "markdown",
-        "content": "# The Observability Pipeline\n\nTechMart uses **OpenTelemetry** to achieve full observability with **zero manual metrics code**. Every reliability signal — from request counts to SLO burn rates — is derived automatically from distributed traces.\n\n```\n  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510     \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510     \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n  \u2502   User Action   \u2502 \u2500\u2500\u2500\u25b6 \u2502  OTel Auto-Instrument   \u2502 \u2500\u2500\u2500\u25b6 \u2502   Distributed Traces   \u2502\n  \u2502  (HTTP / Kafka)  \u2502     \u2502  (operator-injected)   \u2502     \u2502   (Grafana Tempo)      \u2502\n  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518     \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518     \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n                                                                   \u2502\n                                                                   \u25bc\n                                                        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n                                                        \u2502  Spanmetrics Connector \u2502\n                                                        \u2502  (OTel Collector)      \u2502\n                                                        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n                                                                   \u2502\n                                                                   \u25bc\n  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510     \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510     \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n  \u2502   Burn Rate      \u2502     \u2502   Grafana SLOs          \u2502     \u2502  Prometheus Metrics  \u2502\n  \u2502   Alerts         \u2502 \u25c0\u2500\u2500\u2500 \u2502   (Terraform-managed)   \u2502 \u25c0\u2500\u2500\u2500 \u2502  (Grafana Mimir)     \u2502\n  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518     \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518     \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n```\n\n### The 8 Critical User Journeys (CUJs)\n\n| CUJ | Route | Availability | Latency Target |\n|-----|-------|:------------:|:--------------:|\n| `product-discovery` | `GET /api/products` | 99.9% | p99 < 1s |\n| `checkout` | `POST /api/orders` | 99.9% | p99 < 2s |\n| `order-lookup` | `GET /api/orders/:id` | 99.9% | p99 < 1s |\n| `product-search` | `GET /api/products/search` | 99.9% | p99 < 500ms |\n| `product-review` | `GET/POST /api/products/:id/reviews` | 99.9% | p99 < 1s |\n| `order-history` | `GET /api/orders?email=` | 99.9% | p99 < 1s |\n| `product-upload` | `POST /api/admin/upload-products` | 99.9% | p99 < 2s |\n| `product-upload-job` | Kafka consumer \u2192 batch INSERT | 99.9% | p99 < 10s |\n\nEach journey is wrapped with `withJourney()` in the API code. **That single function call is all it takes** \u2014 the rest of the pipeline (metrics, SLOs, alerts) is fully automated."
+        "content": "# The Observability Pipeline\n\nscoady.local uses **OpenTelemetry** to achieve full observability with **zero manual metrics code**. Every reliability signal — from request counts to SLO burn rates — is derived automatically from distributed traces.\n\n```\n  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510     \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510     \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n  \u2502   User Action   \u2502 \u2500\u2500\u2500\u25b6 \u2502  OTel Auto-Instrument   \u2502 \u2500\u2500\u2500\u25b6 \u2502   Distributed Traces   \u2502\n  \u2502  (HTTP / Kafka)  \u2502     \u2502  (operator-injected)   \u2502     \u2502   (Grafana Tempo)      \u2502\n  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518     \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518     \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n                                                                   \u2502\n                                                                   \u25bc\n                                                        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n                                                        \u2502  Spanmetrics Connector \u2502\n                                                        \u2502  (OTel Collector)      \u2502\n                                                        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n                                                                   \u2502\n                                                                   \u25bc\n  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510     \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510     \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n  \u2502   Burn Rate      \u2502     \u2502   Grafana SLOs          \u2502     \u2502  Prometheus Metrics  \u2502\n  \u2502   Alerts         \u2502 \u25c0\u2500\u2500\u2500 \u2502   (Terraform-managed)   \u2502 \u25c0\u2500\u2500\u2500 \u2502  (Grafana Mimir)     \u2502\n  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518     \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518     \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n```\n\n### The 8 Critical User Journeys (CUJs)\n\n| CUJ | Route | Availability | Latency Target |\n|-----|-------|:------------:|:--------------:|\n| `product-discovery` | `GET /api/products` | 99.9% | p99 < 1s |\n| `checkout` | `POST /api/orders` | 99.9% | p99 < 2s |\n| `order-lookup` | `GET /api/orders/:id` | 99.9% | p99 < 1s |\n| `product-search` | `GET /api/products/search` | 99.9% | p99 < 500ms |\n| `product-review` | `GET/POST /api/products/:id/reviews` | 99.9% | p99 < 1s |\n| `order-history` | `GET /api/orders?email=` | 99.9% | p99 < 1s |\n| `product-upload` | `POST /api/admin/upload-products` | 99.9% | p99 < 2s |\n| `product-upload-job` | Kafka consumer \u2192 batch INSERT | 99.9% | p99 < 10s |\n\nEach journey is wrapped with `withJourney()` in the API code. **That single function call is all it takes** \u2014 the rest of the pipeline (metrics, SLOs, alerts) is fully automated."
       }
     },
 
@@ -87,7 +87,7 @@
       "gridPos": { "x": 0, "y": 13, "w": 24, "h": 10 },
       "options": {
         "mode": "markdown",
-        "content": "## Traces \u2014 Capturing the User Journey\n\nThe **OTel Kubernetes Operator** auto-injects the Node.js SDK into every service via a single annotation:\n\n```yaml\ninstrumentation.opentelemetry.io/inject-nodejs: \"techmart\"\n```\n\nThis gives us automatic instrumentation for **HTTP**, **PostgreSQL**, and **KafkaJS** \u2014 with zero code changes.\n\nOn top of that, each Critical User Journey is wrapped with `withJourney()`, which:\n\n```javascript\nrouter.post('/orders', async (req, res) => {\n  const result = await withJourney('checkout', async () => {\n    // \u2460 Stamps cuj.name=\"checkout\" on the parent HTTP span\n    // \u2461 Creates child span \"cuj.checkout\" wrapping the critical path\n    // \u2462 Injects W3C Baggage so downstream services inherit cuj.name\n    // \u2463 Records exceptions and sets ERROR status on failure\n    return await processOrder(req.body);\n  });\n  res.status(201).json(result);\n});\n```\n\n### Async Trace Propagation (Kafka)\n\nFor the product-upload flow, traces cross **async message boundaries**:\n\n```\nHTTP POST /api/admin/upload-products          \u2190 API service\n  \u2514\u2500 cuj.product-upload\n       \u2514\u2500 pg.query INSERT INTO upload_jobs\n       \u2514\u2500 kafka.produce product-uploads         \u2190 auto-instrumented\n            \u2514\u2500 kafka.receive product-uploads      \u2190 auto-instrumented (worker)\n                 \u2514\u2500 cuj.product-upload-job\n                      \u2514\u2500 pg.query INSERT INTO products (batch)\n                      \u2514\u2500 pg.query UPDATE upload_jobs\n```\n\nThe `@opentelemetry/instrumentation-kafkajs` library automatically injects `traceparent` + `baggage` into Kafka message headers on produce, and extracts them on consume \u2014 creating a **single parent-child trace** that spans both services.\n\n**Paste a trace ID above** to see a real trace waterfall below \u2193"
+        "content": "## Traces \u2014 Capturing the User Journey\n\nThe **OTel Kubernetes Operator** auto-injects the Node.js SDK into every service via a single annotation:\n\n```yaml\ninstrumentation.opentelemetry.io/inject-nodejs: \"scoady\"\n```\n\nThis gives us automatic instrumentation for **HTTP**, **PostgreSQL**, and **KafkaJS** \u2014 with zero code changes.\n\nOn top of that, each Critical User Journey is wrapped with `withJourney()`, which:\n\n```javascript\nrouter.post('/orders', async (req, res) => {\n  const result = await withJourney('checkout', async () => {\n    // \u2460 Stamps cuj.name=\"checkout\" on the parent HTTP span\n    // \u2461 Creates child span \"cuj.checkout\" wrapping the critical path\n    // \u2462 Injects W3C Baggage so downstream services inherit cuj.name\n    // \u2463 Records exceptions and sets ERROR status on failure\n    return await processOrder(req.body);\n  });\n  res.status(201).json(result);\n});\n```\n\n### Async Trace Propagation (Kafka)\n\nFor the product-upload flow, traces cross **async message boundaries**:\n\n```\nHTTP POST /api/admin/upload-products          \u2190 API service\n  \u2514\u2500 cuj.product-upload\n       \u2514\u2500 pg.query INSERT INTO upload_jobs\n       \u2514\u2500 kafka.produce product-uploads         \u2190 auto-instrumented\n            \u2514\u2500 kafka.receive product-uploads      \u2190 auto-instrumented (worker)\n                 \u2514\u2500 cuj.product-upload-job\n                      \u2514\u2500 pg.query INSERT INTO products (batch)\n                      \u2514\u2500 pg.query UPDATE upload_jobs\n```\n\nThe `@opentelemetry/instrumentation-kafkajs` library automatically injects `traceparent` + `baggage` into Kafka message headers on produce, and extracts them on consume \u2014 creating a **single parent-child trace** that spans both services.\n\n**Paste a trace ID above** to see a real trace waterfall below \u2193"
       }
     },
 
@@ -120,19 +120,19 @@
       "gridPos": { "x": 0, "y": 42, "w": 24, "h": 9 },
       "options": {
         "mode": "markdown",
-        "content": "## Metrics \u2014 Derived Automatically from Traces\n\nThe OTel Collector runs a **spanmetrics connector** that watches every span flowing through it. For each `cuj.*` span, it automatically generates two Prometheus metrics:\n\n| Metric | Type | Labels | Purpose |\n|--------|------|--------|---------|\n| `techmart_calls_total` | Counter | `span_name`, `status_code`, `service_name` | Request count, success/error rate |\n| `techmart_duration_milliseconds_bucket` | Histogram | `span_name`, `service_name`, `le` | Latency distribution (p50/p95/p99) |\n\n### How it works\n\n```yaml\n# OTel Collector configuration (simplified)\nconnectors:\n  spanmetrics:\n    namespace: techmart\n    metrics_flush_interval: 15s\n    histogram:\n      explicit:\n        buckets: [10, 50, 100, 500, 1000, 2000, 5000, 10000]\n    dimensions:\n      - name: cuj.name\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [otlp/tempo, spanmetrics]   # Traces go to Tempo AND spanmetrics\n    metrics:\n      receivers: [spanmetrics]                # Spanmetrics feeds into metrics pipeline\n      exporters: [prometheusremotewrite]      # Metrics go to Grafana Mimir\n```\n\n**No application code writes metrics.** The collector derives them from traces. Adding a new CUJ with `withJourney('new-cuj')` instantly generates metrics \u2014 no collector config changes needed.\n\nThe panels below show these auto-derived metrics in action \u2193"
+        "content": "## Metrics \u2014 Derived Automatically from Traces\n\nThe OTel Collector runs a **spanmetrics connector** that watches every span flowing through it. For each `cuj.*` span, it automatically generates two Prometheus metrics:\n\n| Metric | Type | Labels | Purpose |\n|--------|------|--------|---------|\n| `scoady_calls_total` | Counter | `span_name`, `status_code`, `service_name` | Request count, success/error rate |\n| `scoady_duration_milliseconds_bucket` | Histogram | `span_name`, `service_name`, `le` | Latency distribution (p50/p95/p99) |\n\n### How it works\n\n```yaml\n# OTel Collector configuration (simplified)\nconnectors:\n  spanmetrics:\n    namespace: scoady\n    metrics_flush_interval: 15s\n    histogram:\n      explicit:\n        buckets: [10, 50, 100, 500, 1000, 2000, 5000, 10000]\n    dimensions:\n      - name: cuj.name\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [otlp/tempo, spanmetrics]   # Traces go to Tempo AND spanmetrics\n    metrics:\n      receivers: [spanmetrics]                # Spanmetrics feeds into metrics pipeline\n      exporters: [prometheusremotewrite]      # Metrics go to Grafana Mimir\n```\n\n**No application code writes metrics.** The collector derives them from traces. Adding a new CUJ with `withJourney('new-cuj')` instantly generates metrics \u2014 no collector config changes needed.\n\nThe panels below show these auto-derived metrics in action \u2193"
       }
     },
 
     {
       "type": "timeseries", "id": 5,
       "title": "Request Rate by CUJ",
-      "description": "Derived from techmart_calls_total \u2014 auto-generated by the spanmetrics connector from cuj.* trace spans.",
+      "description": "Derived from scoady_calls_total \u2014 auto-generated by the spanmetrics connector from cuj.* trace spans.",
       "gridPos": { "x": 0, "y": 51, "w": 12, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
         {
-          "expr": "sum(rate(techmart_calls_total{span_name=~\"cuj\\\\..*\"}[5m])) by (span_name)",
+          "expr": "sum(rate(scoady_calls_total{span_name=~\"cuj\\\\..*\"}[5m])) by (span_name)",
           "legendFormat": "{{span_name}}",
           "refId": "A"
         }
@@ -157,12 +157,12 @@
     {
       "type": "timeseries", "id": 6,
       "title": "p99 Latency by CUJ",
-      "description": "Derived from techmart_duration_milliseconds_bucket \u2014 histogram_quantile computes p99 from the auto-generated histogram buckets.",
+      "description": "Derived from scoady_duration_milliseconds_bucket \u2014 histogram_quantile computes p99 from the auto-generated histogram buckets.",
       "gridPos": { "x": 12, "y": 51, "w": 12, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=~\"cuj\\\\..*\"}[5m])) by (span_name, le))",
+          "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=~\"cuj\\\\..*\"}[5m])) by (span_name, le))",
           "legendFormat": "{{span_name}}",
           "refId": "A"
         }
@@ -196,7 +196,7 @@
       "gridPos": { "x": 0, "y": 60, "w": 24, "h": 10 },
       "options": {
         "mode": "markdown",
-        "content": "## SLOs \u2014 Setting Reliability Targets\n\nEach CUJ gets **two SLOs**, both managed as Terraform resources (`grafana_slo`):\n\n| Type | Query | What it measures |\n|------|-------|------------------|\n| **Availability** (ratio) | `good = calls{status\u2260ERROR}` / `total = calls{}` | % of requests that succeed |\n| **Latency** (freeform) | `calls{le=\"target\"} / calls{le=\"+Inf\"}` | % of requests within latency target |\n\n### Error Budget Math\n\nWith a **99.9% SLO** over a 30-day window:\n\n```\nError budget = 0.1% of total requests\n             \u2248 43 minutes of downtime per 30 days\n             \u2248 1.4 minutes per day\n```\n\nIf the error rate exceeds 0.1%, the budget starts depleting. When it hits zero, the SLO is breached.\n\n### Terraform Definition Pattern\n\n```hcl\nresource \"grafana_slo\" \"checkout_availability\" {\n  name = \"Checkout \u2014 Availability\"\n  query {\n    type = \"ratio\"\n    ratio {\n      success_metric = \"techmart_calls_total{span_name=\\\"cuj.checkout\\\", status_code!=\\\"STATUS_CODE_ERROR\\\"}\"\n      total_metric   = \"techmart_calls_total{span_name=\\\"cuj.checkout\\\"}\"\n    }\n  }\n  objectives {\n    value  = 0.999    # 99.9%\n    window = \"30d\"\n  }\n  alerting {\n    fastburn { ... }   # >14.4\u00d7 burn \u2192 critical\n    slowburn { ... }   # >6\u00d7 burn \u2192 warning\n  }\n}\n```\n\nThe stat panels below show the **current success rate** for each CUJ (last 1 hour) \u2193"
+        "content": "## SLOs \u2014 Setting Reliability Targets\n\nEach CUJ gets **two SLOs**, both managed as Terraform resources (`grafana_slo`):\n\n| Type | Query | What it measures |\n|------|-------|------------------|\n| **Availability** (ratio) | `good = calls{status\u2260ERROR}` / `total = calls{}` | % of requests that succeed |\n| **Latency** (freeform) | `calls{le=\"target\"} / calls{le=\"+Inf\"}` | % of requests within latency target |\n\n### Error Budget Math\n\nWith a **99.9% SLO** over a 30-day window:\n\n```\nError budget = 0.1% of total requests\n             \u2248 43 minutes of downtime per 30 days\n             \u2248 1.4 minutes per day\n```\n\nIf the error rate exceeds 0.1%, the budget starts depleting. When it hits zero, the SLO is breached.\n\n### Terraform Definition Pattern\n\n```hcl\nresource \"grafana_slo\" \"checkout_availability\" {\n  name = \"Checkout \u2014 Availability\"\n  query {\n    type = \"ratio\"\n    ratio {\n      success_metric = \"scoady_calls_total{span_name=\\\"cuj.checkout\\\", status_code!=\\\"STATUS_CODE_ERROR\\\"}\"\n      total_metric   = \"scoady_calls_total{span_name=\\\"cuj.checkout\\\"}\"\n    }\n  }\n  objectives {\n    value  = 0.999    # 99.9%\n    window = \"30d\"\n  }\n  alerting {\n    fastburn { ... }   # >14.4\u00d7 burn \u2192 critical\n    slowburn { ... }   # >6\u00d7 burn \u2192 warning\n  }\n}\n```\n\nThe stat panels below show the **current success rate** for each CUJ (last 1 hour) \u2193"
       }
     },
 
@@ -205,7 +205,7 @@
       "title": "product-discovery",
       "gridPos": { "x": 0, "y": 70, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.product-discovery\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(techmart_calls_total{span_name=\"cuj.product-discovery\"}[1h]))", "refId": "A" }],
+      "targets": [{ "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.product-discovery\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(scoady_calls_total{span_name=\"cuj.product-discovery\"}[1h]))", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "fieldConfig": { "defaults": { "unit": "percent", "decimals": 2, "min": 99, "max": 100, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99.5 }, { "color": "green", "value": 99.9 }] } } }
     },
@@ -214,7 +214,7 @@
       "title": "checkout",
       "gridPos": { "x": 3, "y": 70, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.checkout\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(techmart_calls_total{span_name=\"cuj.checkout\"}[1h]))", "refId": "A" }],
+      "targets": [{ "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.checkout\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(scoady_calls_total{span_name=\"cuj.checkout\"}[1h]))", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "fieldConfig": { "defaults": { "unit": "percent", "decimals": 2, "min": 99, "max": 100, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99.5 }, { "color": "green", "value": 99.9 }] } } }
     },
@@ -223,7 +223,7 @@
       "title": "order-lookup",
       "gridPos": { "x": 6, "y": 70, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.order-lookup\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(techmart_calls_total{span_name=\"cuj.order-lookup\"}[1h]))", "refId": "A" }],
+      "targets": [{ "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.order-lookup\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(scoady_calls_total{span_name=\"cuj.order-lookup\"}[1h]))", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "fieldConfig": { "defaults": { "unit": "percent", "decimals": 2, "min": 99, "max": 100, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99.5 }, { "color": "green", "value": 99.9 }] } } }
     },
@@ -232,7 +232,7 @@
       "title": "product-search",
       "gridPos": { "x": 9, "y": 70, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.product-search\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(techmart_calls_total{span_name=\"cuj.product-search\"}[1h]))", "refId": "A" }],
+      "targets": [{ "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.product-search\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(scoady_calls_total{span_name=\"cuj.product-search\"}[1h]))", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "fieldConfig": { "defaults": { "unit": "percent", "decimals": 2, "min": 99, "max": 100, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99.5 }, { "color": "green", "value": 99.9 }] } } }
     },
@@ -241,7 +241,7 @@
       "title": "product-review",
       "gridPos": { "x": 12, "y": 70, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.product-review\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(techmart_calls_total{span_name=\"cuj.product-review\"}[1h]))", "refId": "A" }],
+      "targets": [{ "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.product-review\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(scoady_calls_total{span_name=\"cuj.product-review\"}[1h]))", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "fieldConfig": { "defaults": { "unit": "percent", "decimals": 2, "min": 99, "max": 100, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99.5 }, { "color": "green", "value": 99.9 }] } } }
     },
@@ -250,7 +250,7 @@
       "title": "order-history",
       "gridPos": { "x": 15, "y": 70, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.order-history\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(techmart_calls_total{span_name=\"cuj.order-history\"}[1h]))", "refId": "A" }],
+      "targets": [{ "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.order-history\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(scoady_calls_total{span_name=\"cuj.order-history\"}[1h]))", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "fieldConfig": { "defaults": { "unit": "percent", "decimals": 2, "min": 99, "max": 100, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99.5 }, { "color": "green", "value": 99.9 }] } } }
     },
@@ -259,7 +259,7 @@
       "title": "product-upload",
       "gridPos": { "x": 18, "y": 70, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.product-upload\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(techmart_calls_total{span_name=\"cuj.product-upload\"}[1h]))", "refId": "A" }],
+      "targets": [{ "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.product-upload\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(scoady_calls_total{span_name=\"cuj.product-upload\"}[1h]))", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "fieldConfig": { "defaults": { "unit": "percent", "decimals": 2, "min": 99, "max": 100, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99.5 }, { "color": "green", "value": 99.9 }] } } }
     },
@@ -268,7 +268,7 @@
       "title": "product-upload-job",
       "gridPos": { "x": 21, "y": 70, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.product-upload-job\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(techmart_calls_total{span_name=\"cuj.product-upload-job\"}[1h]))", "refId": "A" }],
+      "targets": [{ "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.product-upload-job\", status_code!=\"STATUS_CODE_ERROR\"}[1h])) / sum(increase(scoady_calls_total{span_name=\"cuj.product-upload-job\"}[1h]))", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "fieldConfig": { "defaults": { "unit": "percent", "decimals": 2, "min": 99, "max": 100, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99.5 }, { "color": "green", "value": 99.9 }] } } }
     },
@@ -295,7 +295,7 @@
       "title": "product-discovery",
       "gridPos": { "x": 0, "y": 85, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.product-discovery\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(techmart_calls_total{span_name=\"cuj.product-discovery\"}[1h])) / 0.001", "refId": "A" }],
+      "targets": [{ "expr": "sum(rate(scoady_calls_total{span_name=\"cuj.product-discovery\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(scoady_calls_total{span_name=\"cuj.product-discovery\"}[1h])) / 0.001", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "fieldConfig": { "defaults": { "unit": "x", "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "orange", "value": 6 }, { "color": "red", "value": 14.4 }] }, "noValue": "0.0x" } }
     },
@@ -304,7 +304,7 @@
       "title": "checkout",
       "gridPos": { "x": 3, "y": 85, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.checkout\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(techmart_calls_total{span_name=\"cuj.checkout\"}[1h])) / 0.001", "refId": "A" }],
+      "targets": [{ "expr": "sum(rate(scoady_calls_total{span_name=\"cuj.checkout\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(scoady_calls_total{span_name=\"cuj.checkout\"}[1h])) / 0.001", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "fieldConfig": { "defaults": { "unit": "x", "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "orange", "value": 6 }, { "color": "red", "value": 14.4 }] }, "noValue": "0.0x" } }
     },
@@ -313,7 +313,7 @@
       "title": "order-lookup",
       "gridPos": { "x": 6, "y": 85, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.order-lookup\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(techmart_calls_total{span_name=\"cuj.order-lookup\"}[1h])) / 0.001", "refId": "A" }],
+      "targets": [{ "expr": "sum(rate(scoady_calls_total{span_name=\"cuj.order-lookup\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(scoady_calls_total{span_name=\"cuj.order-lookup\"}[1h])) / 0.001", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "fieldConfig": { "defaults": { "unit": "x", "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "orange", "value": 6 }, { "color": "red", "value": 14.4 }] }, "noValue": "0.0x" } }
     },
@@ -322,7 +322,7 @@
       "title": "product-search",
       "gridPos": { "x": 9, "y": 85, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.product-search\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(techmart_calls_total{span_name=\"cuj.product-search\"}[1h])) / 0.001", "refId": "A" }],
+      "targets": [{ "expr": "sum(rate(scoady_calls_total{span_name=\"cuj.product-search\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(scoady_calls_total{span_name=\"cuj.product-search\"}[1h])) / 0.001", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "fieldConfig": { "defaults": { "unit": "x", "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "orange", "value": 6 }, { "color": "red", "value": 14.4 }] }, "noValue": "0.0x" } }
     },
@@ -331,7 +331,7 @@
       "title": "product-review",
       "gridPos": { "x": 12, "y": 85, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.product-review\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(techmart_calls_total{span_name=\"cuj.product-review\"}[1h])) / 0.001", "refId": "A" }],
+      "targets": [{ "expr": "sum(rate(scoady_calls_total{span_name=\"cuj.product-review\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(scoady_calls_total{span_name=\"cuj.product-review\"}[1h])) / 0.001", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "fieldConfig": { "defaults": { "unit": "x", "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "orange", "value": 6 }, { "color": "red", "value": 14.4 }] }, "noValue": "0.0x" } }
     },
@@ -340,7 +340,7 @@
       "title": "order-history",
       "gridPos": { "x": 15, "y": 85, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.order-history\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(techmart_calls_total{span_name=\"cuj.order-history\"}[1h])) / 0.001", "refId": "A" }],
+      "targets": [{ "expr": "sum(rate(scoady_calls_total{span_name=\"cuj.order-history\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(scoady_calls_total{span_name=\"cuj.order-history\"}[1h])) / 0.001", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "fieldConfig": { "defaults": { "unit": "x", "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "orange", "value": 6 }, { "color": "red", "value": 14.4 }] }, "noValue": "0.0x" } }
     },
@@ -349,7 +349,7 @@
       "title": "product-upload",
       "gridPos": { "x": 18, "y": 85, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.product-upload\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(techmart_calls_total{span_name=\"cuj.product-upload\"}[1h])) / 0.001", "refId": "A" }],
+      "targets": [{ "expr": "sum(rate(scoady_calls_total{span_name=\"cuj.product-upload\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(scoady_calls_total{span_name=\"cuj.product-upload\"}[1h])) / 0.001", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "fieldConfig": { "defaults": { "unit": "x", "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "orange", "value": 6 }, { "color": "red", "value": 14.4 }] }, "noValue": "0.0x" } }
     },
@@ -358,7 +358,7 @@
       "title": "product-upload-job",
       "gridPos": { "x": 21, "y": 85, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.product-upload-job\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(techmart_calls_total{span_name=\"cuj.product-upload-job\"}[1h])) / 0.001", "refId": "A" }],
+      "targets": [{ "expr": "sum(rate(scoady_calls_total{span_name=\"cuj.product-upload-job\", status_code=\"STATUS_CODE_ERROR\"}[1h])) / sum(rate(scoady_calls_total{span_name=\"cuj.product-upload-job\"}[1h])) / 0.001", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "fieldConfig": { "defaults": { "unit": "x", "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "orange", "value": 6 }, { "color": "red", "value": 14.4 }] }, "noValue": "0.0x" } }
     }

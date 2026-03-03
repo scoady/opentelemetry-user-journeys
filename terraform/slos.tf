@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# TechMart Grafana SLOs
+# scoady.local Grafana SLOs
 #
 # 16 SLOs — availability + latency for each Critical User Journey:
 #
@@ -17,7 +17,7 @@
 # Availability uses the native "ratio" query type (good/total counters).
 # Latency uses "freeform" with a histogram bucket fraction — the spanmetrics
 # connector emits explicit buckets 10ms…10s, so le="2000", le="1000", le="500"
-# exist as exact boundaries in techmart_duration_milliseconds_bucket.
+# exist as exact boundaries in scoady_duration_milliseconds_bucket.
 #
 # Both fast-burn (14.4×) and slow-burn (6×) alert rules are generated
 # automatically by Grafana when the `alerting {}` block is present.
@@ -33,7 +33,7 @@ locals {
 resource "grafana_slo" "checkout_availability" {
   name        = "Checkout — Availability"
   description = "99.9 % of cuj.checkout spans must succeed (not STATUS_CODE_ERROR). Error budget: ~43 minutes of downtime per 30 days."
-  folder_uid  = grafana_folder.techmart.uid
+  folder_uid  = grafana_folder.scoady.uid
 
   destination_datasource {
     uid = local.prom_uid
@@ -42,8 +42,8 @@ resource "grafana_slo" "checkout_availability" {
   query {
     type = "ratio"
     ratio {
-      success_metric = "techmart_calls_total{span_name=\"cuj.checkout\", status_code!=\"STATUS_CODE_ERROR\"}"
-      total_metric   = "techmart_calls_total{span_name=\"cuj.checkout\"}"
+      success_metric = "scoady_calls_total{span_name=\"cuj.checkout\", status_code!=\"STATUS_CODE_ERROR\"}"
+      total_metric   = "scoady_calls_total{span_name=\"cuj.checkout\"}"
     }
   }
 
@@ -96,7 +96,7 @@ resource "grafana_slo" "checkout_availability" {
 resource "grafana_slo" "checkout_latency" {
   name        = "Checkout — Latency p99 < 2 s"
   description = "99.9 % of cuj.checkout requests must complete within 2000 ms. Measured via the le=2000 histogram bucket (exact boundary in the spanmetrics collector config)."
-  folder_uid  = grafana_folder.techmart.uid
+  folder_uid  = grafana_folder.scoady.uid
 
   destination_datasource {
     uid = local.prom_uid
@@ -107,7 +107,7 @@ resource "grafana_slo" "checkout_latency" {
     freeform {
       # Fraction of requests completing within 2000 ms.
       # le="+Inf" == total request count.
-      query = "sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\", le=\"2000\"}[$__rate_interval])) / sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\", le=\"+Inf\"}[$__rate_interval]))"
+      query = "sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\", le=\"2000\"}[$__rate_interval])) / sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\", le=\"+Inf\"}[$__rate_interval]))"
     }
   }
 
@@ -162,7 +162,7 @@ resource "grafana_slo" "checkout_latency" {
 resource "grafana_slo" "product_discovery_availability" {
   name        = "Product Discovery — Availability"
   description = "99.9 % of cuj.product-discovery spans must succeed. Covers GET /api/products and GET /api/products/:id."
-  folder_uid  = grafana_folder.techmart.uid
+  folder_uid  = grafana_folder.scoady.uid
 
   destination_datasource {
     uid = local.prom_uid
@@ -171,8 +171,8 @@ resource "grafana_slo" "product_discovery_availability" {
   query {
     type = "ratio"
     ratio {
-      success_metric = "techmart_calls_total{span_name=\"cuj.product-discovery\", status_code!=\"STATUS_CODE_ERROR\"}"
-      total_metric   = "techmart_calls_total{span_name=\"cuj.product-discovery\"}"
+      success_metric = "scoady_calls_total{span_name=\"cuj.product-discovery\", status_code!=\"STATUS_CODE_ERROR\"}"
+      total_metric   = "scoady_calls_total{span_name=\"cuj.product-discovery\"}"
     }
   }
 
@@ -225,7 +225,7 @@ resource "grafana_slo" "product_discovery_availability" {
 resource "grafana_slo" "product_discovery_latency" {
   name        = "Product Discovery — Latency p99 < 1 s"
   description = "99.9 % of cuj.product-discovery requests must complete within 1000 ms. Measured via the le=1000 histogram bucket."
-  folder_uid  = grafana_folder.techmart.uid
+  folder_uid  = grafana_folder.scoady.uid
 
   destination_datasource {
     uid = local.prom_uid
@@ -234,7 +234,7 @@ resource "grafana_slo" "product_discovery_latency" {
   query {
     type = "freeform"
     freeform {
-      query = "sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-discovery\", le=\"1000\"}[$__rate_interval])) / sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-discovery\", le=\"+Inf\"}[$__rate_interval]))"
+      query = "sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-discovery\", le=\"1000\"}[$__rate_interval])) / sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-discovery\", le=\"+Inf\"}[$__rate_interval]))"
     }
   }
 
@@ -289,7 +289,7 @@ resource "grafana_slo" "product_discovery_latency" {
 resource "grafana_slo" "order_lookup_availability" {
   name        = "Order Lookup — Availability"
   description = "99.9 % of cuj.order-lookup spans must succeed. Covers GET /api/orders."
-  folder_uid  = grafana_folder.techmart.uid
+  folder_uid  = grafana_folder.scoady.uid
 
   destination_datasource {
     uid = local.prom_uid
@@ -298,8 +298,8 @@ resource "grafana_slo" "order_lookup_availability" {
   query {
     type = "ratio"
     ratio {
-      success_metric = "techmart_calls_total{span_name=\"cuj.order-lookup\", status_code!=\"STATUS_CODE_ERROR\"}"
-      total_metric   = "techmart_calls_total{span_name=\"cuj.order-lookup\"}"
+      success_metric = "scoady_calls_total{span_name=\"cuj.order-lookup\", status_code!=\"STATUS_CODE_ERROR\"}"
+      total_metric   = "scoady_calls_total{span_name=\"cuj.order-lookup\"}"
     }
   }
 
@@ -352,7 +352,7 @@ resource "grafana_slo" "order_lookup_availability" {
 resource "grafana_slo" "order_lookup_latency" {
   name        = "Order Lookup — Latency p99 < 1 s"
   description = "99.9 % of cuj.order-lookup requests must complete within 1000 ms. Measured via the le=1000 histogram bucket."
-  folder_uid  = grafana_folder.techmart.uid
+  folder_uid  = grafana_folder.scoady.uid
 
   destination_datasource {
     uid = local.prom_uid
@@ -361,7 +361,7 @@ resource "grafana_slo" "order_lookup_latency" {
   query {
     type = "freeform"
     freeform {
-      query = "sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.order-lookup\", le=\"1000\"}[$__rate_interval])) / sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.order-lookup\", le=\"+Inf\"}[$__rate_interval]))"
+      query = "sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.order-lookup\", le=\"1000\"}[$__rate_interval])) / sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.order-lookup\", le=\"+Inf\"}[$__rate_interval]))"
     }
   }
 
@@ -416,7 +416,7 @@ resource "grafana_slo" "order_lookup_latency" {
 resource "grafana_slo" "product_search_availability" {
   name        = "Product Search — Availability"
   description = "99.9 % of cuj.product-search spans must succeed. Covers GET /api/products/search."
-  folder_uid  = grafana_folder.techmart.uid
+  folder_uid  = grafana_folder.scoady.uid
 
   destination_datasource {
     uid = local.prom_uid
@@ -425,8 +425,8 @@ resource "grafana_slo" "product_search_availability" {
   query {
     type = "ratio"
     ratio {
-      success_metric = "techmart_calls_total{span_name=\"cuj.product-search\", status_code!=\"STATUS_CODE_ERROR\"}"
-      total_metric   = "techmart_calls_total{span_name=\"cuj.product-search\"}"
+      success_metric = "scoady_calls_total{span_name=\"cuj.product-search\", status_code!=\"STATUS_CODE_ERROR\"}"
+      total_metric   = "scoady_calls_total{span_name=\"cuj.product-search\"}"
     }
   }
 
@@ -479,7 +479,7 @@ resource "grafana_slo" "product_search_availability" {
 resource "grafana_slo" "product_search_latency" {
   name        = "Product Search — Latency p99 < 500 ms"
   description = "99.9 % of cuj.product-search requests must complete within 500 ms. Measured via the le=500 histogram bucket."
-  folder_uid  = grafana_folder.techmart.uid
+  folder_uid  = grafana_folder.scoady.uid
 
   destination_datasource {
     uid = local.prom_uid
@@ -488,7 +488,7 @@ resource "grafana_slo" "product_search_latency" {
   query {
     type = "freeform"
     freeform {
-      query = "sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-search\", le=\"500\"}[$__rate_interval])) / sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-search\", le=\"+Inf\"}[$__rate_interval]))"
+      query = "sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-search\", le=\"500\"}[$__rate_interval])) / sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-search\", le=\"+Inf\"}[$__rate_interval]))"
     }
   }
 
@@ -543,7 +543,7 @@ resource "grafana_slo" "product_search_latency" {
 resource "grafana_slo" "product_review_availability" {
   name        = "Product Review — Availability"
   description = "99.9 % of cuj.product-review spans must succeed. Covers GET and POST /api/products/:id/reviews."
-  folder_uid  = grafana_folder.techmart.uid
+  folder_uid  = grafana_folder.scoady.uid
 
   destination_datasource {
     uid = local.prom_uid
@@ -552,8 +552,8 @@ resource "grafana_slo" "product_review_availability" {
   query {
     type = "ratio"
     ratio {
-      success_metric = "techmart_calls_total{span_name=\"cuj.product-review\", status_code!=\"STATUS_CODE_ERROR\"}"
-      total_metric   = "techmart_calls_total{span_name=\"cuj.product-review\"}"
+      success_metric = "scoady_calls_total{span_name=\"cuj.product-review\", status_code!=\"STATUS_CODE_ERROR\"}"
+      total_metric   = "scoady_calls_total{span_name=\"cuj.product-review\"}"
     }
   }
 
@@ -606,7 +606,7 @@ resource "grafana_slo" "product_review_availability" {
 resource "grafana_slo" "product_review_latency" {
   name        = "Product Review — Latency p99 < 1 s"
   description = "99.9 % of cuj.product-review requests must complete within 1000 ms. Measured via the le=1000 histogram bucket."
-  folder_uid  = grafana_folder.techmart.uid
+  folder_uid  = grafana_folder.scoady.uid
 
   destination_datasource {
     uid = local.prom_uid
@@ -615,7 +615,7 @@ resource "grafana_slo" "product_review_latency" {
   query {
     type = "freeform"
     freeform {
-      query = "sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-review\", le=\"1000\"}[$__rate_interval])) / sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-review\", le=\"+Inf\"}[$__rate_interval]))"
+      query = "sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-review\", le=\"1000\"}[$__rate_interval])) / sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-review\", le=\"+Inf\"}[$__rate_interval]))"
     }
   }
 
@@ -670,7 +670,7 @@ resource "grafana_slo" "product_review_latency" {
 resource "grafana_slo" "order_history_availability" {
   name        = "Order History — Availability"
   description = "99.9 % of cuj.order-history spans must succeed. Covers GET /api/orders?email=."
-  folder_uid  = grafana_folder.techmart.uid
+  folder_uid  = grafana_folder.scoady.uid
 
   destination_datasource {
     uid = local.prom_uid
@@ -679,8 +679,8 @@ resource "grafana_slo" "order_history_availability" {
   query {
     type = "ratio"
     ratio {
-      success_metric = "techmart_calls_total{span_name=\"cuj.order-history\", status_code!=\"STATUS_CODE_ERROR\"}"
-      total_metric   = "techmart_calls_total{span_name=\"cuj.order-history\"}"
+      success_metric = "scoady_calls_total{span_name=\"cuj.order-history\", status_code!=\"STATUS_CODE_ERROR\"}"
+      total_metric   = "scoady_calls_total{span_name=\"cuj.order-history\"}"
     }
   }
 
@@ -733,7 +733,7 @@ resource "grafana_slo" "order_history_availability" {
 resource "grafana_slo" "order_history_latency" {
   name        = "Order History — Latency p99 < 1 s"
   description = "99.9 % of cuj.order-history requests must complete within 1000 ms. Measured via the le=1000 histogram bucket."
-  folder_uid  = grafana_folder.techmart.uid
+  folder_uid  = grafana_folder.scoady.uid
 
   destination_datasource {
     uid = local.prom_uid
@@ -742,7 +742,7 @@ resource "grafana_slo" "order_history_latency" {
   query {
     type = "freeform"
     freeform {
-      query = "sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.order-history\", le=\"1000\"}[$__rate_interval])) / sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.order-history\", le=\"+Inf\"}[$__rate_interval]))"
+      query = "sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.order-history\", le=\"1000\"}[$__rate_interval])) / sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.order-history\", le=\"+Inf\"}[$__rate_interval]))"
     }
   }
 
@@ -797,7 +797,7 @@ resource "grafana_slo" "order_history_latency" {
 resource "grafana_slo" "product_upload_availability" {
   name        = "Product Upload — Availability"
   description = "99.9 % of cuj.product-upload spans must succeed. Covers POST /api/admin/upload-products (API-side: job creation + Kafka produce)."
-  folder_uid  = grafana_folder.techmart.uid
+  folder_uid  = grafana_folder.scoady.uid
 
   destination_datasource {
     uid = local.prom_uid
@@ -806,8 +806,8 @@ resource "grafana_slo" "product_upload_availability" {
   query {
     type = "ratio"
     ratio {
-      success_metric = "techmart_calls_total{span_name=\"cuj.product-upload\", status_code!=\"STATUS_CODE_ERROR\"}"
-      total_metric   = "techmart_calls_total{span_name=\"cuj.product-upload\"}"
+      success_metric = "scoady_calls_total{span_name=\"cuj.product-upload\", status_code!=\"STATUS_CODE_ERROR\"}"
+      total_metric   = "scoady_calls_total{span_name=\"cuj.product-upload\"}"
     }
   }
 
@@ -860,7 +860,7 @@ resource "grafana_slo" "product_upload_availability" {
 resource "grafana_slo" "product_upload_latency" {
   name        = "Product Upload — Latency p99 < 2 s"
   description = "99.9 % of cuj.product-upload requests must complete within 2000 ms. Covers job creation + Kafka produce. Measured via the le=2000 histogram bucket."
-  folder_uid  = grafana_folder.techmart.uid
+  folder_uid  = grafana_folder.scoady.uid
 
   destination_datasource {
     uid = local.prom_uid
@@ -869,7 +869,7 @@ resource "grafana_slo" "product_upload_latency" {
   query {
     type = "freeform"
     freeform {
-      query = "sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload\", le=\"2000\"}[$__rate_interval])) / sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload\", le=\"+Inf\"}[$__rate_interval]))"
+      query = "sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-upload\", le=\"2000\"}[$__rate_interval])) / sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-upload\", le=\"+Inf\"}[$__rate_interval]))"
     }
   }
 
@@ -924,7 +924,7 @@ resource "grafana_slo" "product_upload_latency" {
 resource "grafana_slo" "product_upload_job_availability" {
   name        = "Product Upload Job — Availability"
   description = "99.9 % of cuj.product-upload-job spans must succeed. Covers Kafka consume → batch INSERT → job status update in the product-worker service."
-  folder_uid  = grafana_folder.techmart.uid
+  folder_uid  = grafana_folder.scoady.uid
 
   destination_datasource {
     uid = local.prom_uid
@@ -933,8 +933,8 @@ resource "grafana_slo" "product_upload_job_availability" {
   query {
     type = "ratio"
     ratio {
-      success_metric = "techmart_calls_total{span_name=\"cuj.product-upload-job\", status_code!=\"STATUS_CODE_ERROR\"}"
-      total_metric   = "techmart_calls_total{span_name=\"cuj.product-upload-job\"}"
+      success_metric = "scoady_calls_total{span_name=\"cuj.product-upload-job\", status_code!=\"STATUS_CODE_ERROR\"}"
+      total_metric   = "scoady_calls_total{span_name=\"cuj.product-upload-job\"}"
     }
   }
 
@@ -987,7 +987,7 @@ resource "grafana_slo" "product_upload_job_availability" {
 resource "grafana_slo" "product_upload_job_latency" {
   name        = "Product Upload Job — Latency p99 < 10 s"
   description = "99.9 % of cuj.product-upload-job requests must complete within 10000 ms. Covers Kafka consume through batch INSERT of products. Measured via the le=10000 histogram bucket."
-  folder_uid  = grafana_folder.techmart.uid
+  folder_uid  = grafana_folder.scoady.uid
 
   destination_datasource {
     uid = local.prom_uid
@@ -996,7 +996,7 @@ resource "grafana_slo" "product_upload_job_latency" {
   query {
     type = "freeform"
     freeform {
-      query = "sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload-job\", le=\"10000\"}[$__rate_interval])) / sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.product-upload-job\", le=\"+Inf\"}[$__rate_interval]))"
+      query = "sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-upload-job\", le=\"10000\"}[$__rate_interval])) / sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.product-upload-job\", le=\"+Inf\"}[$__rate_interval]))"
     }
   }
 

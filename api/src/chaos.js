@@ -1,5 +1,5 @@
 /**
- * Chaos / fault injection engine for TechMart CUJ demos.
+ * Chaos / fault injection engine for scoady.local CUJ demos.
  *
  * In-memory config — survives for the lifetime of the process,
  * resets on pod restart (intentional for a demo tool).

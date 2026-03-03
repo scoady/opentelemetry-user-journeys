@@ -1,5 +1,5 @@
 {
-  "name": "techmart-api",
+  "name": "scoady-api",
   "version": "1.0.0",
   "description": "TechMart REST API",
   "main": "src/index.js",

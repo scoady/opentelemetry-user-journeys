@@ -1,10 +1,10 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# TechMart Helm values — kind / local-dev defaults
+# scoady.local Helm values — kind / local-dev defaults
 #
 # Deploy with:
-#   helm upgrade --install techmart ./infrastructure/helm/techmart \
-#     --namespace webstore --create-namespace \
-#     --values ./infrastructure/helm/techmart/values.yaml
+#   helm upgrade --install scoady ./infrastructure/helm/scoady \
+#     --namespace scoady --create-namespace \
+#     --values ./infrastructure/helm/scoady/values.yaml
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ── Global ────────────────────────────────────────────────────────────────────
@@ -22,9 +22,9 @@ postgres:
 
   # Override password in production via --set or a separate secrets file.
   credentials:
-    database: techmart
-    user: techmart
-    password: techmart-secret-pw
+    database: scoady
+    user: scoady
+    password: scoady-secret-pw
 
   storage: 1Gi
 
@@ -39,7 +39,7 @@ postgres:
 # ── API ───────────────────────────────────────────────────────────────────────
 api:
   image:
-    repository: webstore/api
+    repository: scoady/api
     tag: latest
     # IfNotPresent: use the locally-loaded image if present, pull from a registry
     # otherwise. build-and-load.sh overrides tag with the git SHA so Helm detects
@@ -65,7 +65,7 @@ api:
 # ── Frontend ──────────────────────────────────────────────────────────────────
 frontend:
   image:
-    repository: webstore/frontend
+    repository: scoady/frontend
     tag: latest
     pullPolicy: IfNotPresent
 
@@ -74,9 +74,7 @@ frontend:
   ingress:
     enabled: true
     className: nginx
-    # Leave host empty to match all incoming hostnames (default for kind / localhost).
-    # Set to a real hostname for production, e.g. techmart.example.com
-    host: ""
+    host: scoady.local
 
   resources:
     requests:
@@ -89,7 +87,7 @@ frontend:
 # ── Inventory service ─────────────────────────────────────────────────────────
 inventorySvc:
   image:
-    repository: webstore/inventory-svc
+    repository: scoady/inventory-svc
     tag: latest
     pullPolicy: IfNotPresent
 
@@ -98,8 +96,8 @@ inventorySvc:
 
   # Simulated inventory DB latency in milliseconds.
   # Change live without redeploying:
-  #   helm upgrade techmart ./infrastructure/helm/techmart \
-  #     --namespace webstore --reuse-values \
+  #   helm upgrade scoady ./infrastructure/helm/scoady \
+  #     --namespace scoady --reuse-values \
   #     --set inventorySvc.artificialDelayMs=1500
   artificialDelayMs: 500
 
@@ -128,7 +126,7 @@ kafka:
 # ── Product Worker (Kafka consumer) ──────────────────────────────────────────
 productWorker:
   image:
-    repository: webstore/product-worker
+    repository: scoady/product-worker
     tag: latest
     pullPolicy: IfNotPresent
 
@@ -151,7 +149,7 @@ traffic:
   rps: 5
 
   # Target base URL. Override if deploying outside kind.
-  targetUrl: "http://frontend.webstore.svc.cluster.local"
+  targetUrl: "http://frontend.scoady.svc.cluster.local"
 
   resources:
     requests:

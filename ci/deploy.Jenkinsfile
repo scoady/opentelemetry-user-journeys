@@ -52,20 +52,20 @@ pipeline {
         container('helm') {
           sh """
             helm upgrade techmart ${WORKSPACE}/infrastructure/helm/techmart \\
-              --namespace webstore \\
+              --namespace scoady \\
               --create-namespace \\
               --values ${WORKSPACE}/infrastructure/helm/techmart/values.yaml \\
               --set global.imageRegistry=${REGISTRY} \\
-              --set api.image.repository=webstore/api \\
+              --set api.image.repository=scoady/api \\
               --set api.image.tag=${params.IMAGE_TAG} \\
               --set api.image.pullPolicy=Always \\
-              --set inventorySvc.image.repository=webstore/inventory-svc \\
+              --set inventorySvc.image.repository=scoady/inventory-svc \\
               --set inventorySvc.image.tag=${params.IMAGE_TAG} \\
               --set inventorySvc.image.pullPolicy=Always \\
-              --set frontend.image.repository=webstore/frontend \\
+              --set frontend.image.repository=scoady/frontend \\
               --set frontend.image.tag=${params.IMAGE_TAG} \\
               --set frontend.image.pullPolicy=Always \\
-              --set productWorker.image.repository=webstore/product-worker \\
+              --set productWorker.image.repository=scoady/product-worker \\
               --set productWorker.image.tag=${params.IMAGE_TAG} \\
               --set productWorker.image.pullPolicy=Always \\
               --wait \\
@@ -79,10 +79,10 @@ pipeline {
       steps {
         container('helm') {
           sh """
-            kubectl rollout status deployment/api           -n webstore --timeout=120s
-            kubectl rollout status deployment/inventory-svc -n webstore --timeout=120s
-            kubectl rollout status deployment/frontend       -n webstore --timeout=120s
-            kubectl rollout status deployment/product-worker -n webstore --timeout=120s
+            kubectl rollout status deployment/api           -n scoady --timeout=120s
+            kubectl rollout status deployment/inventory-svc -n scoady --timeout=120s
+            kubectl rollout status deployment/frontend       -n scoady --timeout=120s
+            kubectl rollout status deployment/product-worker -n scoady --timeout=120s
           """
         }
       }
@@ -107,7 +107,7 @@ pipeline {
     failure {
       echo "Deployment failed for tag=${params.IMAGE_TAG}."
       // Print recent helm history to aid debugging
-      sh "helm history techmart -n webstore --max 5 || true"
+      sh "helm history techmart -n scoady --max 5 || true"
     }
   }
 }

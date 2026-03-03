@@ -42,5 +42,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`TechMart API running on port ${PORT}`);
+  console.log(`scoady.local API running on port ${PORT}`);
 });

@@ -53,7 +53,7 @@
 const { trace, context, propagation, SpanStatusCode } = require('@opentelemetry/api');
 const { applyChaos } = require('./chaos');
 
-const tracer = trace.getTracer('techmart-api', '1.0.0');
+const tracer = trace.getTracer('scoady-api', '1.0.0');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // withJourney  — use in the service that *owns* a CUJ

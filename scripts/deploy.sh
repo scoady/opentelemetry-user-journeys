@@ -21,12 +21,12 @@ TAG="$(git -C "${ROOT_DIR}" rev-parse --short HEAD)"
 if [[ -n "$(git -C "${ROOT_DIR}" status --porcelain 2>/dev/null)" ]]; then
   TAG="${TAG}-dev"
 fi
-echo ">>> Deploying TechMart (tag=${TAG})…"
+echo ">>> Deploying scoady.local (tag=${TAG})…"
 
 # The Instrumentation CR is a pre-install hook inside the chart — it is created
 # before app pods so the OTel webhook has a CR to resolve at pod admission time.
-helm upgrade --install techmart "${CHART_DIR}" \
-  --namespace webstore \
+helm upgrade --install scoady "${CHART_DIR}" \
+  --namespace scoady \
   --create-namespace \
   --values "${VALUES_FILE}" \
   --set "api.image.tag=${TAG}" \
@@ -41,15 +41,15 @@ helm upgrade --install techmart "${CHART_DIR}" \
 # second admission pass once the cache is warm.
 echo ""
 echo ">>> Restarting instrumented pods so OTel webhook picks up the Instrumentation CR…"
-kubectl rollout restart deployment/api deployment/inventory-svc -n webstore
-kubectl rollout status  deployment/api           -n webstore --timeout=120s
-kubectl rollout status  deployment/inventory-svc -n webstore --timeout=120s
+kubectl rollout restart deployment/api deployment/inventory-svc -n scoady
+kubectl rollout status  deployment/api           -n scoady --timeout=120s
+kubectl rollout status  deployment/inventory-svc -n scoady --timeout=120s
 
 # Poll /api/health until the full stack is reachable.
 echo ""
 echo ">>> Waiting for full stack to be reachable…"
 for i in $(seq 1 30); do
-  ct=$(curl -s -o /dev/null -w "%{content_type}" http://localhost/api/health 2>/dev/null || true)
+  ct=$(curl -s -o /dev/null -w "%{content_type}" http://scoady.local/api/health 2>/dev/null || true)
   if [[ "$ct" == *"application/json"* ]]; then
     echo "    Stack confirmed healthy."
     break
@@ -65,7 +65,7 @@ done
 echo ""
 echo "✓ TechMart is deployed!"
 echo ""
-echo "  Open http://localhost in your browser."
+echo "  Open http://scoady.local in your browser."
 echo ""
 echo "  Grafana dashboards: deploy via Terraform"
 echo "    cd terraform && terraform init && terraform apply"
@@ -73,4 +73,4 @@ echo ""
 echo "  To update after code or manifest changes:"
 echo "    ./scripts/build-and-load.sh"
 echo ""
-kubectl get pods -n webstore
+kubectl get pods -n scoady

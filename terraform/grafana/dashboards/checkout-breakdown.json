@@ -16,12 +16,12 @@
     { "type": "panel",      "id": "timeseries", "name": "Time series", "version": ""       },
     { "type": "panel",      "id": "bargauge",   "name": "Bar gauge",   "version": ""       }
   ],
-  "title": "TechMart — Checkout CUJ Latency Breakdown",
+  "title": "scoady.local — Checkout CUJ Latency Breakdown",
   "description": "Per-service p99 latency breakdown for the checkout CUJ. Shows where time is spent across api and inventory-svc. Adjust inventorySvc.artificialDelayMs via helm upgrade to see the attribution shift in real time.",
-  "uid": "techmart-checkout-breakdown",
+  "uid": "scoady-checkout-breakdown",
   "version": 1,
   "schemaVersion": 38,
-  "tags": ["slo", "techmart", "checkout", "cuj", "breakdown", "latency"],
+  "tags": ["slo", "scoady", "checkout", "cuj", "breakdown", "latency"],
   "time": { "from": "now-30m", "to": "now" },
   "refresh": "15s",
   "templating": {
@@ -45,7 +45,7 @@
       "gridPos": { "x": 0, "y": 0, "w": 6, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le))",
+        "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" },
@@ -68,7 +68,7 @@
       "gridPos": { "x": 6, "y": 0, "w": 6, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
+        "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" },
@@ -91,7 +91,7 @@
       "gridPos": { "x": 12, "y": 0, "w": 6, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le)) - ignoring() histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
+        "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le)) - ignoring() histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
@@ -114,7 +114,7 @@
       "gridPos": { "x": 18, "y": 0, "w": 3, "h": 2 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.checkout\", service_name=\"api\"}[2m]))",
+        "expr": "sum(rate(scoady_calls_total{span_name=\"cuj.checkout\", service_name=\"api\"}[2m]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
@@ -128,7 +128,7 @@
       "gridPos": { "x": 18, "y": 2, "w": 3, "h": 3 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "sum(rate(techmart_calls_total{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m]))",
+        "expr": "sum(rate(scoady_calls_total{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
@@ -142,7 +142,7 @@
       "gridPos": { "x": 21, "y": 0, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "100 * sum(rate(techmart_calls_total{service_name=\"inventory-svc\", cuj_name=\"checkout\", status_code=\"STATUS_CODE_ERROR\"}[2m])) / sum(rate(techmart_calls_total{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m]))",
+        "expr": "100 * sum(rate(scoady_calls_total{service_name=\"inventory-svc\", cuj_name=\"checkout\", status_code=\"STATUS_CODE_ERROR\"}[2m])) / sum(rate(scoady_calls_total{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
@@ -165,15 +165,15 @@
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le))",
           "legendFormat": "checkout total (api)"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
           "legendFormat": "inventory-svc  ← artificial delay"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le)) - ignoring() histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le)) - ignoring() histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
           "legendFormat": "api overhead"
         },
         { "expr": "vector(2000)", "legendFormat": "SLO target (2 s)" }
@@ -217,15 +217,15 @@
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le))",
           "legendFormat": "checkout total"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
           "legendFormat": "inventory-svc"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le)) - ignoring() histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le)) - ignoring() histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
           "legendFormat": "api overhead"
         }
       ],
@@ -255,27 +255,27 @@
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le))",
           "legendFormat": "checkout p50"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le))",
           "legendFormat": "checkout p95"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\", service_name=\"api\"}[2m])) by (le))",
           "legendFormat": "checkout p99"
         },
         {
-          "expr": "histogram_quantile(0.50, sum(rate(techmart_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(scoady_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
           "legendFormat": "inventory-svc p50"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(techmart_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(scoady_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
           "legendFormat": "inventory-svc p95"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{service_name=\"inventory-svc\", cuj_name=\"checkout\"}[2m])) by (le))",
           "legendFormat": "inventory-svc p99"
         },
         { "expr": "vector(2000)", "legendFormat": "SLO target (2 s)" }

@@ -16,12 +16,12 @@
     { "type": "panel",      "id": "timeseries", "name": "Time series", "version": ""       },
     { "type": "panel",      "id": "table",      "name": "Table",       "version": ""       }
   ],
-  "title": "TechMart — Executive Summary",
-  "description": "One-glance platform health for leadership. Is TechMart healthy?",
-  "uid": "techmart-executive-summary",
+  "title": "scoady.local — Executive Summary",
+  "description": "One-glance platform health for leadership. Is scoady.local healthy?",
+  "uid": "scoady-executive-summary",
   "version": 1,
   "schemaVersion": 38,
-  "tags": ["techmart", "executive", "slo"],
+  "tags": ["scoady", "executive", "slo"],
   "time": { "from": "now-24h", "to": "now" },
   "refresh": "30s",
   "templating": {
@@ -44,7 +44,7 @@
       "gridPos": { "x": 0, "y": 0, "w": 6, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "100 * sum(increase(techmart_calls_total{span_name=~\"cuj..+\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(techmart_calls_total{span_name=~\"cuj..+\"}[24h]))",
+        "expr": "100 * sum(increase(scoady_calls_total{span_name=~\"cuj..+\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(scoady_calls_total{span_name=~\"cuj..+\"}[24h]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
@@ -66,7 +66,7 @@
       "gridPos": { "x": 6, "y": 0, "w": 6, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=~\"cuj..+\"}[5m])) by (le))",
+        "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=~\"cuj..+\"}[5m])) by (le))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
@@ -88,7 +88,7 @@
       "gridPos": { "x": 12, "y": 0, "w": 6, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "sum(increase(techmart_calls_total{span_name=~\"cuj..+\"}[24h]))",
+        "expr": "sum(increase(scoady_calls_total{span_name=~\"cuj..+\"}[24h]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
@@ -101,7 +101,7 @@
       "gridPos": { "x": 18, "y": 0, "w": 6, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "sum(increase(techmart_calls_total{span_name=~\"cuj..+\", status_code=\"STATUS_CODE_ERROR\"}[24h]))",
+        "expr": "sum(increase(scoady_calls_total{span_name=~\"cuj..+\", status_code=\"STATUS_CODE_ERROR\"}[24h]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
@@ -123,7 +123,7 @@
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
         {
-          "expr": "100 * sum(rate(techmart_calls_total{span_name=~\"cuj..+\", status_code=\"STATUS_CODE_ERROR\"}[5m])) / sum(rate(techmart_calls_total{span_name=~\"cuj..+\"}[5m]))",
+          "expr": "100 * sum(rate(scoady_calls_total{span_name=~\"cuj..+\", status_code=\"STATUS_CODE_ERROR\"}[5m])) / sum(rate(scoady_calls_total{span_name=~\"cuj..+\"}[5m]))",
           "legendFormat": "error rate"
         },
         { "expr": "vector(0.1)", "legendFormat": "SLO budget (0.1%)" }
@@ -154,7 +154,7 @@
       "gridPos": { "x": 0, "y": 14, "w": 3, "h": 3 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.checkout\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(techmart_calls_total{span_name=\"cuj.checkout\"}[24h]))",
+        "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.checkout\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(scoady_calls_total{span_name=\"cuj.checkout\"}[24h]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
@@ -166,7 +166,7 @@
       "gridPos": { "x": 3, "y": 14, "w": 3, "h": 3 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.product-discovery\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(techmart_calls_total{span_name=\"cuj.product-discovery\"}[24h]))",
+        "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.product-discovery\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(scoady_calls_total{span_name=\"cuj.product-discovery\"}[24h]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
@@ -178,7 +178,7 @@
       "gridPos": { "x": 6, "y": 14, "w": 3, "h": 3 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.product-search\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(techmart_calls_total{span_name=\"cuj.product-search\"}[24h]))",
+        "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.product-search\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(scoady_calls_total{span_name=\"cuj.product-search\"}[24h]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
@@ -190,7 +190,7 @@
       "gridPos": { "x": 9, "y": 14, "w": 3, "h": 3 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.product-review\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(techmart_calls_total{span_name=\"cuj.product-review\"}[24h]))",
+        "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.product-review\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(scoady_calls_total{span_name=\"cuj.product-review\"}[24h]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
@@ -202,7 +202,7 @@
       "gridPos": { "x": 12, "y": 14, "w": 3, "h": 3 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.order-lookup\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(techmart_calls_total{span_name=\"cuj.order-lookup\"}[24h]))",
+        "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.order-lookup\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(scoady_calls_total{span_name=\"cuj.order-lookup\"}[24h]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
@@ -214,7 +214,7 @@
       "gridPos": { "x": 15, "y": 14, "w": 3, "h": 3 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.order-history\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(techmart_calls_total{span_name=\"cuj.order-history\"}[24h]))",
+        "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.order-history\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(scoady_calls_total{span_name=\"cuj.order-history\"}[24h]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
@@ -226,7 +226,7 @@
       "gridPos": { "x": 18, "y": 14, "w": 3, "h": 3 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.product-upload\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(techmart_calls_total{span_name=\"cuj.product-upload\"}[24h]))",
+        "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.product-upload\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(scoady_calls_total{span_name=\"cuj.product-upload\"}[24h]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
@@ -238,7 +238,7 @@
       "gridPos": { "x": 21, "y": 14, "w": 3, "h": 3 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.product-upload-job\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(techmart_calls_total{span_name=\"cuj.product-upload-job\"}[24h]))",
+        "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.product-upload-job\", status_code!=\"STATUS_CODE_ERROR\"}[24h])) / sum(increase(scoady_calls_total{span_name=\"cuj.product-upload-job\"}[24h]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
@@ -251,7 +251,7 @@
       "gridPos": { "x": 0, "y": 17, "w": 24, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "sum by (cuj_name) (rate(techmart_calls_total{span_name=~\"cuj..+\"}[5m]))",
+        "expr": "sum by (cuj_name) (rate(scoady_calls_total{span_name=~\"cuj..+\"}[5m]))",
         "legendFormat": "{{cuj_name}}"
       }],
       "fieldConfig": {

@@ -16,12 +16,12 @@
     { "type": "panel",      "id": "gauge",      "name": "Gauge",       "version": ""       },
     { "type": "panel",      "id": "timeseries", "name": "Time series", "version": ""       }
   ],
-  "title": "TechMart — Checkout SLO",
-  "description": "Deep-dive SLO for the checkout CUJ. Metrics from spanmetrics connector (techmart_calls_total / techmart_duration_milliseconds). SLO: 99.9% success, p99 < 2s.",
-  "uid": "techmart-checkout-slo",
+  "title": "scoady.local — Checkout SLO",
+  "description": "Deep-dive SLO for the checkout CUJ. Metrics from spanmetrics connector (scoady_calls_total / scoady_duration_milliseconds). SLO: 99.9% success, p99 < 2s.",
+  "uid": "scoady-checkout-slo",
   "version": 2,
   "schemaVersion": 38,
-  "tags": ["slo", "techmart", "checkout", "cuj", "spanmetrics"],
+  "tags": ["slo", "scoady", "checkout", "cuj", "spanmetrics"],
   "time": { "from": "now-24h", "to": "now" },
   "refresh": "30s",
   "templating": {
@@ -59,7 +59,7 @@
       "gridPos": { "x": 0, "y": 0, "w": 5, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "100 * sum(increase(techmart_calls_total{span_name=\"cuj.checkout\", status_code!=\"STATUS_CODE_ERROR\"}[$window])) / sum(increase(techmart_calls_total{span_name=\"cuj.checkout\"}[$window]))",
+        "expr": "100 * sum(increase(scoady_calls_total{span_name=\"cuj.checkout\", status_code!=\"STATUS_CODE_ERROR\"}[$window])) / sum(increase(scoady_calls_total{span_name=\"cuj.checkout\"}[$window]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
@@ -81,7 +81,7 @@
       "gridPos": { "x": 5, "y": 0, "w": 5, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "100 * (1 - (sum(increase(techmart_calls_total{span_name=\"cuj.checkout\", status_code=\"STATUS_CODE_ERROR\"}[30d])) / sum(increase(techmart_calls_total{span_name=\"cuj.checkout\"}[30d]))) / 0.001)",
+        "expr": "100 * (1 - (sum(increase(scoady_calls_total{span_name=\"cuj.checkout\", status_code=\"STATUS_CODE_ERROR\"}[30d])) / sum(increase(scoady_calls_total{span_name=\"cuj.checkout\"}[30d]))) / 0.001)",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "showThresholdLabels": true, "showThresholdMarkers": true },
@@ -103,7 +103,7 @@
       "gridPos": { "x": 10, "y": 0, "w": 4, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\"}[5m])) by (le))",
+        "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\"}[5m])) by (le))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
@@ -124,7 +124,7 @@
       "gridPos": { "x": 14, "y": 0, "w": 4, "h": 2 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "sum(rate(techmart_calls_total{span_name=\"cuj.checkout\"}[5m]))",
+        "expr": "sum(rate(scoady_calls_total{span_name=\"cuj.checkout\"}[5m]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
@@ -136,7 +136,7 @@
       "gridPos": { "x": 14, "y": 2, "w": 4, "h": 3 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "sum(increase(techmart_calls_total{span_name=\"cuj.checkout\", status_code=\"STATUS_CODE_ERROR\"}[$window]))",
+        "expr": "sum(increase(scoady_calls_total{span_name=\"cuj.checkout\", status_code=\"STATUS_CODE_ERROR\"}[$window]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
@@ -156,7 +156,7 @@
       "gridPos": { "x": 18, "y": 0, "w": 3, "h": 2 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.50, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\"}[5m])) by (le))",
+        "expr": "histogram_quantile(0.50, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\"}[5m])) by (le))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
@@ -168,7 +168,7 @@
       "gridPos": { "x": 18, "y": 2, "w": 3, "h": 3 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "histogram_quantile(0.95, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\"}[5m])) by (le))",
+        "expr": "histogram_quantile(0.95, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\"}[5m])) by (le))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
@@ -180,7 +180,7 @@
       "gridPos": { "x": 21, "y": 0, "w": 3, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [{
-        "expr": "sum(increase(techmart_calls_total{span_name=\"cuj.checkout\"}[$window]))",
+        "expr": "sum(increase(scoady_calls_total{span_name=\"cuj.checkout\"}[$window]))",
         "legendFormat": ""
       }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
@@ -194,7 +194,7 @@
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
         {
-          "expr": "100 * sum(rate(techmart_calls_total{span_name=\"cuj.checkout\", status_code=\"STATUS_CODE_ERROR\"}[5m])) / sum(rate(techmart_calls_total{span_name=\"cuj.checkout\"}[5m]))",
+          "expr": "100 * sum(rate(scoady_calls_total{span_name=\"cuj.checkout\", status_code=\"STATUS_CODE_ERROR\"}[5m])) / sum(rate(scoady_calls_total{span_name=\"cuj.checkout\"}[5m]))",
           "legendFormat": "error rate"
         },
         { "expr": "vector(0.1)", "legendFormat": "SLO target (0.1%)" }
@@ -220,15 +220,15 @@
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\"}[5m])) by (le))",
           "legendFormat": "p50"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\"}[5m])) by (le))",
           "legendFormat": "p95"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(techmart_duration_milliseconds_bucket{span_name=\"cuj.checkout\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(scoady_duration_milliseconds_bucket{span_name=\"cuj.checkout\"}[5m])) by (le))",
           "legendFormat": "p99"
         },
         { "expr": "vector(2000)", "legendFormat": "SLO target (2s)" }
@@ -253,7 +253,7 @@
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
         {
-          "expr": "sum by (status_code) (rate(techmart_calls_total{span_name=\"cuj.checkout\"}[5m]))",
+          "expr": "sum by (status_code) (rate(scoady_calls_total{span_name=\"cuj.checkout\"}[5m]))",
           "legendFormat": "{{status_code}}"
         }
       ],
