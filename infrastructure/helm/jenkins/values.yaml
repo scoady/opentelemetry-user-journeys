@@ -71,7 +71,7 @@ controller:
       # System message
       welcome-message: |
         jenkins:
-          systemMessage: "CI/CD — kind dev cluster.\n\nPipelines auto-configured: techmart-build, techmart-deploy, llm-daw-build, llm-daw-deploy."
+          systemMessage: "CI/CD — kind dev cluster.\n\nPipelines auto-configured: techmart-build, techmart-deploy, llm-daw-build, llm-daw-deploy, claude-manager-build, claude-manager-deploy."
 
       # SSH credential for GitHub clones + skip host-key verification (local dev)
       credentials: |
@@ -343,6 +343,55 @@ controller:
                       git {
                         remote {
                           url('git@github.com:scoady/llm-daw.git')
+                          credentials('github-ssh')
+                        }
+                        branch('*/main')
+                      }
+                    }
+                    scriptPath('ci/deploy.Jenkinsfile')
+                  }
+                }
+                logRotator {
+                  numToKeep(20)
+                }
+              }
+
+          - script: >
+              pipelineJob('claude-manager-build') {
+                description('Build claude-manager images with Kaniko and push to in-cluster registry, then deploy.')
+                definition {
+                  cpsScm {
+                    scm {
+                      git {
+                        remote {
+                          url('git@github.com:scoady/claude-manager.git')
+                          credentials('github-ssh')
+                        }
+                        branch('*/main')
+                      }
+                    }
+                    scriptPath('ci/build.Jenkinsfile')
+                  }
+                }
+                triggers {
+                  scm('H/5 * * * *')
+                }
+                logRotator {
+                  numToKeep(10)
+                }
+              }
+          - script: >
+              pipelineJob('claude-manager-deploy') {
+                description('Deploy claude-manager to the claude-manager namespace via helm upgrade.')
+                parameters {
+                  stringParam('IMAGE_TAG', 'latest', 'Git SHA tag to deploy (e.g. a1b2c3d)')
+                }
+                definition {
+                  cpsScm {
+                    scm {
+                      git {
+                        remote {
+                          url('git@github.com:scoady/claude-manager.git')
                           credentials('github-ssh')
                         }
                         branch('*/main')
