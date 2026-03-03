@@ -27,4 +27,21 @@ nodes:
         hostPort: 443
         protocol: TCP
   - role: worker
+    # Mount the Mac's .claude directory and claude binary into the node so the
+    # claude-manager backend can read session files and spawn `claude -p --resume`.
+    # Docker Desktop shares /Users by default, making this available to kind nodes.
+    extraMounts:
+      - hostPath: /Users/ayx106492/.claude
+        containerPath: /Users/ayx106492/.claude
+        readOnly: false
+      - hostPath: /Users/ayx106492/.local/bin/claude
+        containerPath: /Users/ayx106492/.local/bin/claude
+        readOnly: true
   - role: worker
+    extraMounts:
+      - hostPath: /Users/ayx106492/.claude
+        containerPath: /Users/ayx106492/.claude
+        readOnly: false
+      - hostPath: /Users/ayx106492/.local/bin/claude
+        containerPath: /Users/ayx106492/.local/bin/claude
+        readOnly: true
