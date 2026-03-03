@@ -2,17 +2,18 @@
 # deploy.sh — First-time deploy of the full TechMart stack via Helm.
 #
 # Prerequisites (run in order on a fresh cluster):
-#   1. ./infrastructure/scripts/setup-cluster.sh   — kind cluster + Helm repos
-#   2. ./infrastructure/scripts/build-and-load.sh  — build + load Docker images
-#   3. ./infrastructure/scripts/setup-telemetry.sh — cert-manager + OTel Operator + Collector
-#   4. THIS SCRIPT                                 — Helm install of the app
+#   1. ~/git/kind-infra/scripts/setup-cluster.sh    — kind cluster + Helm repos
+#   2. ~/git/kind-infra/scripts/setup-cicd.sh       — registry + Jenkins
+#   3. ~/git/kind-infra/scripts/setup-telemetry.sh  — cert-manager + OTel Operator + Collector
+#   4. ./scripts/build-and-load.sh                  — build + load Docker images
+#   5. THIS SCRIPT                                  — Helm install of the app
 #
 # For subsequent code or manifest changes, use build-and-load.sh instead.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-CHART_DIR="${ROOT_DIR}/infrastructure/helm/techmart"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+CHART_DIR="${ROOT_DIR}/helm"
 VALUES_FILE="${CHART_DIR}/values.yaml"
 
 # Use the same SHA tag that build-and-load.sh produced for these images.
@@ -70,6 +71,6 @@ echo "  Grafana dashboards: deploy via Terraform"
 echo "    cd terraform && terraform init && terraform apply"
 echo ""
 echo "  To update after code or manifest changes:"
-echo "    ./infrastructure/scripts/build-and-load.sh"
+echo "    ./scripts/build-and-load.sh"
 echo ""
 kubectl get pods -n webstore

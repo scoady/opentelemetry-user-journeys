@@ -11,8 +11,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-CHART_DIR="${ROOT_DIR}/infrastructure/helm/techmart"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+CHART_DIR="${ROOT_DIR}/helm"
 VALUES_FILE="${CHART_DIR}/values.yaml"
 
 # ── Image tag ─────────────────────────────────────────────────────────────────
